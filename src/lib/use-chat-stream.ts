@@ -14,13 +14,28 @@ export type ToolEvent = {
   tool: string
   callId: string
   args?: unknown
+  outputPreview?: string | null
 }
+
+export type StreamTimelineEvent =
+  | {
+      type: 'thinking'
+      id: string
+      kind: string
+      content: string
+    }
+  | {
+      type: 'tool'
+      id: string
+      event: ToolEvent
+    }
 
 export type ThreadStreamState = {
   status: 'idle' | 'streaming' | 'done' | 'error'
   text: string
   thinking: string
   toolEvents: ToolEvent[]
+  timeline: StreamTimelineEvent[]
   latencyMs: number | null
   usage: Record<string, unknown> | null
   error: string | null
@@ -41,9 +56,16 @@ type Action =
   | { type: 'START_STREAM' }
   | { type: 'THREAD_META'; threadId: string; provider: string; modelName: string }
   | { type: 'TEXT_DELTA'; threadId: string; delta: string }
-  | { type: 'THINKING_DELTA'; threadId: string; delta: string }
+  | { type: 'THINKING_DELTA'; threadId: string; delta: string; kind: string }
   | { type: 'TOOL_EVENT'; threadId: string; event: ToolEvent }
-  | { type: 'THREAD_DONE'; threadId: string; latencyMs: number; usage: Record<string, unknown> | null; content: string | null }
+  | {
+      type: 'THREAD_DONE'
+      threadId: string
+      latencyMs: number
+      usage: Record<string, unknown> | null
+      content: string | null
+      thinking: Record<string, unknown> | null
+    }
   | { type: 'THREAD_ERROR'; threadId: string; error: string }
   | { type: 'ALL_DONE' }
   | { type: 'RESET' }
@@ -53,6 +75,7 @@ const EMPTY_THREAD: ThreadStreamState = {
   text: '',
   thinking: '',
   toolEvents: [],
+  timeline: [],
   latencyMs: null,
   usage: null,
   error: null,
@@ -119,11 +142,31 @@ function reducer(state: State, action: Action): State {
     case 'THINKING_DELTA': {
       const threads = ensureThread(state.threads, action.threadId)
       const t = threads[action.threadId]
+      const last = t.timeline.at(-1)
+      const timeline =
+        last?.type === 'thinking' && last.kind === action.kind
+          ? [
+              ...t.timeline.slice(0, -1),
+              { ...last, content: last.content + action.delta },
+            ]
+          : [
+              ...t.timeline,
+              {
+                type: 'thinking' as const,
+                id: `thinking-${t.timeline.length}`,
+                kind: action.kind,
+                content: action.delta,
+              },
+            ]
       return {
         ...state,
         threads: {
           ...threads,
-          [action.threadId]: { ...t, thinking: t.thinking + action.delta },
+          [action.threadId]: {
+            ...t,
+            thinking: t.thinking + action.delta,
+            timeline,
+          },
         },
       }
     }
@@ -138,6 +181,14 @@ function reducer(state: State, action: Action): State {
           [action.threadId]: {
             ...t,
             toolEvents: [...t.toolEvents, action.event],
+            timeline: [
+              ...t.timeline,
+              {
+                type: 'tool' as const,
+                id: `${action.event.callId}-${action.event.type}-${t.timeline.length}`,
+                event: action.event,
+              },
+            ],
           },
         },
       }
@@ -148,6 +199,21 @@ function reducer(state: State, action: Action): State {
       const t = threads[action.threadId]
       // Use content from thread_done as fallback if no text_delta events were received
       const text = t.text || action.content || ''
+      const hasThinking = t.timeline.some((event) => event.type === 'thinking')
+      const doneThinking = hasThinking
+        ? null
+        : thinkingFromDone(action.thinking, t.provider)
+      const timeline = doneThinking
+        ? [
+            ...t.timeline,
+            {
+              type: 'thinking' as const,
+              id: `thinking-${t.timeline.length}`,
+              kind: doneThinking.kind,
+              content: doneThinking.content,
+            },
+          ]
+        : t.timeline
       return {
         ...state,
         threads: {
@@ -156,6 +222,7 @@ function reducer(state: State, action: Action): State {
             ...t,
             status: 'done',
             text,
+            timeline,
             latencyMs: action.latencyMs,
             usage: action.usage,
           },
@@ -318,6 +385,7 @@ function processEvent(event: SSEEvent, dispatch: (action: Action) => void) {
         type: 'THINKING_DELTA',
         threadId: event.thread_id,
         delta: event.delta,
+        kind: event.kind ?? 'reasoning',
       })
       break
 
@@ -342,6 +410,7 @@ function processEvent(event: SSEEvent, dispatch: (action: Action) => void) {
           type: 'tool_end',
           tool: event.tool,
           callId: event.call_id,
+          outputPreview: event.output_preview ?? null,
         },
       })
       break
@@ -353,6 +422,7 @@ function processEvent(event: SSEEvent, dispatch: (action: Action) => void) {
         latencyMs: event.latency_ms,
         usage: event.usage,
         content: event.content ?? null,
+        thinking: event.thinking,
       })
       break
 
@@ -368,4 +438,25 @@ function processEvent(event: SSEEvent, dispatch: (action: Action) => void) {
       dispatch({ type: 'ALL_DONE' })
       break
   }
+}
+
+function thinkingFromDone(
+  thinking: Record<string, unknown> | null,
+  provider: string | null,
+) {
+  if (!thinking) return null
+
+  const preferredKey = provider === 'openai' ? 'summary' : 'reasoning'
+  const preferred = thinking[preferredKey]
+  if (typeof preferred === 'string' && preferred) {
+    return { kind: preferredKey, content: preferred }
+  }
+
+  const alternateKey = provider === 'openai' ? 'reasoning' : 'summary'
+  const alternate = thinking[alternateKey]
+  if (typeof alternate === 'string' && alternate) {
+    return { kind: alternateKey, content: alternate }
+  }
+
+  return null
 }

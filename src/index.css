@@ -60,6 +60,41 @@ body {
   min-height: 100vh;
 }
 
+.text-shimmer {
+  --shimmer-base: #7c3aed;
+  --shimmer-mid: #c084fc;
+  --shimmer-highlight: #ffffff;
+  background: linear-gradient(
+    90deg,
+    var(--shimmer-base) 0%,
+    var(--shimmer-base) 35%,
+    var(--shimmer-mid) 43%,
+    var(--shimmer-highlight) 50%,
+    var(--shimmer-mid) 57%,
+    var(--shimmer-base) 65%,
+    var(--shimmer-base) 100%
+  );
+  background-size: 320% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: text-shimmer 1.45s linear infinite;
+}
+
+span.text-shimmer {
+  display: inline-block;
+}
+
+@keyframes text-shimmer {
+  0% {
+    background-position: 140% 0;
+  }
+  100% {
+    background-position: -140% 0;
+  }
+}
+
 button,
 input {
   font: inherit;

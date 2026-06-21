@@ -219,13 +219,13 @@ export function PlaygroundPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <main className="flex h-screen flex-col bg-[#f7f3ea] text-slate-950">
+    <main className="flex h-screen flex-col bg-slate-100 text-slate-950">
       {/* Header */}
-      <header className="shrink-0 border-b border-slate-200 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <header className="shrink-0 border-b border-slate-200 bg-white/90 shadow-sm shadow-slate-900/5 backdrop-blur">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-5 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <button
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-slate-950 text-sm font-black text-white"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-slate-950 text-sm font-black text-white shadow-sm shadow-slate-950/20"
               onClick={() => navigate('/')}
             >
               MP
@@ -239,7 +239,7 @@ export function PlaygroundPage() {
                     onChange={(e) => setEditTitle(e.target.value)}
                     onBlur={handleRename}
                     disabled={isSaving}
-                    className="h-7 w-64 text-sm font-semibold"
+                    className="h-8 w-64 text-sm font-semibold"
                     maxLength={255}
                   />
                 </form>
@@ -249,7 +249,7 @@ export function PlaygroundPage() {
                   onDoubleClick={startRename}
                   title="Double-click to rename"
                 >
-                  <p className="truncate font-semibold">
+                  <p className="truncate text-base font-semibold">
                     {isLoading ? 'Loading...' : detail?.title ?? 'Playground'}
                   </p>
                   {!isLoading && detail && (
@@ -257,11 +257,11 @@ export function PlaygroundPage() {
                   )}
                 </button>
               )}
-              <p className="text-xs text-slate-500">{id}</p>
+              <p className="font-mono text-xs text-slate-400">{id}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             {!isLoading && detail && (
               <>
                 <Button
@@ -328,7 +328,7 @@ export function PlaygroundPage() {
 
       {/* Error banner */}
       {error && (
-        <Alert variant="destructive" className="mx-auto mt-4 max-w-7xl">
+        <Alert variant="destructive" className="mx-auto mt-4 max-w-[1600px]">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
@@ -341,7 +341,7 @@ export function PlaygroundPage() {
           </div>
         ) : !hasThreads && !hasStreamThreads ? (
           /* ── Welcome state: no threads yet ── */
-          <div className="flex flex-1 items-center justify-center px-6">
+          <div className="flex flex-1 items-center justify-center px-5">
             <div className="w-full max-w-xl space-y-6 text-center">
               <MessageSquarePlus className="mx-auto size-12 text-slate-300" />
               <div>
@@ -351,7 +351,7 @@ export function PlaygroundPage() {
                   responses side by side.
                 </p>
               </div>
-              <div className="rounded-lg border border-slate-200 bg-white p-4 text-left">
+              <div className="rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm shadow-slate-900/5">
                 <ModelSelector
                   models={models}
                   selected={selectedModels}
@@ -389,11 +389,11 @@ export function PlaygroundPage() {
           </div>
         ) : (
           /* ── Chat view: per-thread panels with individual inputs ── */
-          <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden px-6 py-4">
+          <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden px-4 py-4 sm:px-5">
             <div
-              className="grid h-full gap-4"
+              className="grid h-full min-w-fit gap-4"
               style={{
-                gridTemplateColumns: `repeat(${Math.min(allThreadIds.length, 3)}, minmax(280px, 1fr))`,
+                gridTemplateColumns: `repeat(${Math.min(allThreadIds.length, 3)}, minmax(340px, 1fr))`,
               }}
             >
               {allThreadIds.map((threadId) => {
