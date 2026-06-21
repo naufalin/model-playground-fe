@@ -59,19 +59,29 @@ function initState(): State {
   return { threads: {}, chatStatus: 'idle' }
 }
 
-/** Ensure a thread entry exists, creating it lazily on first event. */
+/** Ensure a thread entry exists, creating it lazily on first event.
+ *  If the thread exists but is already done/error, reset it for a new turn. */
 function ensureThread(
   threads: Record<string, ThreadStreamState>,
   threadId: string,
 ): Record<string, ThreadStreamState> {
-  if (threads[threadId]) return threads
-  return { ...threads, [threadId]: { ...EMPTY_THREAD } }
+  const existing = threads[threadId]
+  if (!existing) {
+    return { ...threads, [threadId]: { ...EMPTY_THREAD } }
+  }
+  // If the thread is done/error, this is a new turn — reset it
+  if (existing.status === 'done' || existing.status === 'error') {
+    return { ...threads, [threadId]: { ...EMPTY_THREAD } }
+  }
+  // Thread is actively streaming — keep as-is
+  return threads
 }
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'START_STREAM':
-      return { threads: {}, chatStatus: 'streaming' }
+      // Don't clear threads — concurrent streams must coexist
+      return { ...state, chatStatus: 'streaming' }
 
     case 'TEXT_DELTA': {
       const threads = ensureThread(state.threads, action.threadId)
@@ -144,8 +154,14 @@ function reducer(state: State, action: Action): State {
       }
     }
 
-    case 'ALL_DONE':
+    case 'ALL_DONE': {
+      // Only mark done when every thread has finished
+      const anyStreaming = Object.values(state.threads).some(
+        (t) => t.status === 'streaming',
+      )
+      if (anyStreaming) return state
       return { ...state, chatStatus: 'done' }
+    }
 
     case 'RESET':
       return initState()

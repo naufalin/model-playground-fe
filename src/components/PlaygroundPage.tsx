@@ -383,7 +383,7 @@ export function PlaygroundPage() {
                     messages={historical}
                     streamState={stream}
                     onContinue={(msg) => handleContinue(threadId, msg)}
-                    disabled={isStreaming}
+                    disabled={stream?.status === 'streaming'}
                   />
                 )
               })}
