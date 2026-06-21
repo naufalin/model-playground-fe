@@ -6,6 +6,7 @@ import {
   ChevronUp,
   CircleDashed,
   Cpu,
+  Info,
   Loader2,
   Send,
   Sparkles,
@@ -56,6 +57,7 @@ export function ThreadPanel({
   const scrollRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [inputValue, setInputValue] = useState('')
+  const [metricNow, setMetricNow] = useState(0)
 
   // Auto-scroll on new content
   useEffect(() => {
@@ -79,6 +81,16 @@ export function ThreadPanel({
 
   const isStreaming = streamState?.status === 'streaming'
   const streamDone = streamState?.status === 'done'
+  const latestAssistant = findLatestAssistant(messages)
+  const headerMetrics = streamState
+    ? metricsFromStream(streamState, metricNow)
+    : metricsFromMessage(latestAssistant)
+  const footerUsage =
+    streamState?.status === 'done' && streamState.usage
+      ? { usage: streamState.usage, latencyMs: streamState.latencyMs }
+      : latestAssistant?.usage
+        ? { usage: latestAssistant.usage, latencyMs: latestAssistant.latency_ms }
+        : null
   const hasStreamContent =
     streamState && (streamState.text || streamState.timeline.length > 0)
   // Show streaming overlay while actively streaming, or while done but
@@ -87,6 +99,12 @@ export function ThreadPanel({
 
   // Show per-thread input when onContinue is provided and we have messages
   const showInput = onContinue && messages.length > 0
+
+  useEffect(() => {
+    if (!isStreaming) return
+    const interval = window.setInterval(() => setMetricNow(Date.now()), 500)
+    return () => window.clearInterval(interval)
+  }, [isStreaming])
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -121,23 +139,12 @@ export function ThreadPanel({
           </div>
         </div>
         <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
-          {isStreaming && (
-            <Badge variant="secondary" className="gap-1 bg-sky-50 text-sky-700 ring-1 ring-sky-100">
-              <Loader2 className="size-3 animate-spin" />
-              Live
-            </Badge>
-          )}
-          {streamState?.status === 'done' && streamState.latencyMs != null && (
-            <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
-              {streamState.latencyMs}ms
-            </Badge>
+          {headerMetrics && streamState?.status !== 'error' && (
+            <MetricBadge metrics={headerMetrics} isLive={isStreaming} />
           )}
           {streamState?.status === 'error' && (
             <Badge variant="destructive">Error</Badge>
           )}
-          <Badge variant="secondary" className="bg-white text-slate-500 ring-1 ring-slate-200">
-            {messages.length}
-          </Badge>
         </div>
       </div>
 
@@ -179,9 +186,9 @@ export function ThreadPanel({
       </div>
 
       {/* Usage footer */}
-      {streamState?.status === 'done' && streamState.usage && (
+      {footerUsage && (
         <div className="border-t border-slate-100 bg-slate-50/70 px-4 py-2">
-          <UsageBar usage={streamState.usage} />
+          <UsageBar usage={footerUsage.usage} latencyMs={footerUsage.latencyMs} />
         </div>
       )}
 
@@ -214,6 +221,151 @@ export function ThreadPanel({
       )}
     </div>
   )
+}
+
+type HeaderMetrics = {
+  tpsLabel: string
+  ttftLabel: string
+}
+
+function MetricBadge({
+  metrics,
+  isLive,
+}: {
+  metrics: HeaderMetrics
+  isLive: boolean
+}) {
+  const [showTtftTip, setShowTtftTip] = useState(false)
+
+  return (
+    <Badge
+      variant="secondary"
+      className={cn(
+        'overflow-visible gap-1.5 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100',
+        isLive && 'bg-sky-50 text-sky-700 ring-sky-100',
+      )}
+    >
+      {isLive && <Loader2 className="size-3 animate-spin" />}
+      <span>{metrics.tpsLabel}</span>
+      <span className="text-current/45">·</span>
+      <span className="inline-flex items-center gap-1">
+        <span>{metrics.ttftLabel}</span>
+        <span className="relative inline-flex">
+          <button
+            type="button"
+            className="inline-flex size-4 items-center justify-center rounded-full text-current/60 outline-none transition hover:text-current focus-visible:ring-2 focus-visible:ring-current/30"
+            aria-label="Time to first token: how long the model took to start responding."
+            aria-expanded={showTtftTip}
+            onBlur={() => setShowTtftTip(false)}
+            onClick={() => setShowTtftTip((value) => !value)}
+            onFocus={() => setShowTtftTip(true)}
+            onMouseEnter={() => setShowTtftTip(true)}
+            onMouseLeave={() => setShowTtftTip(false)}
+          >
+            <Info className="size-3" />
+            <span
+              role="tooltip"
+              className={cn(
+                'pointer-events-none absolute right-0 top-full z-20 mt-1 w-44 max-w-[calc(100vw-2rem)] whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-2 text-left text-[11px] font-normal leading-snug text-slate-600 shadow-lg shadow-slate-900/10 sm:w-52',
+                showTtftTip ? 'block' : 'hidden',
+              )}
+            >
+              Time to first token: how long the model took to start responding.
+            </span>
+          </button>
+        </span>
+        <span className="sr-only">
+          Time to first token: how long the model took to start responding.
+        </span>
+      </span>
+    </Badge>
+  )
+}
+
+function findLatestAssistant(messages: Message[]) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index].role === 'assistant') return messages[index]
+  }
+  return undefined
+}
+
+function metricsFromStream(
+  streamState: ThreadStreamState,
+  now: number,
+): HeaderMetrics | null {
+  if (streamState.status === 'error') return null
+
+  const elapsedMs =
+    streamState.status === 'done' && streamState.latencyMs != null
+      ? streamState.latencyMs
+      : Math.max(0, now - streamState.startedAt)
+  const finalOutputTokens =
+    streamState.status === 'done' ? outputTokensFromUsage(streamState.usage) : null
+  const liveOutputTokens =
+    streamState.status === 'streaming'
+      ? estimateTokens(streamState.text + streamState.thinking)
+      : finalOutputTokens
+  const tokens = finalOutputTokens ?? liveOutputTokens
+  const ttftMs = readTtftMs(streamState.usage) ?? streamState.ttftMs
+
+  if (streamState.status === 'done' && tokens == null) return null
+
+  return {
+    tpsLabel:
+      streamState.status === 'streaming' && tokens === 0
+        ? 'calculating'
+        : formatTps(tokensPerSecond(tokens, elapsedMs), streamState.status === 'streaming'),
+    ttftLabel: ttftMs != null ? `TTFT ${formatDuration(ttftMs)}` : 'TTFT ...',
+  }
+}
+
+function metricsFromMessage(message?: Message): HeaderMetrics | null {
+  if (!message?.usage || message.latency_ms == null) return null
+
+  const tokens = outputTokensFromUsage(message.usage)
+  if (tokens == null) return null
+
+  return {
+    tpsLabel: formatTps(tokensPerSecond(tokens, message.latency_ms), false),
+    ttftLabel: readTtftMs(message.usage) != null
+      ? `TTFT ${formatDuration(readTtftMs(message.usage) ?? 0)}`
+      : 'TTFT n/a',
+  }
+}
+
+function outputTokensFromUsage(usage: Record<string, unknown> | null) {
+  if (!usage) return null
+
+  const output = usage.output_tokens ?? usage.completion_tokens ?? usage.total_tokens
+  return typeof output === 'number' && Number.isFinite(output) ? output : null
+}
+
+function readTtftMs(usage: Record<string, unknown> | null) {
+  const perf = usage?.perf
+  if (!perf || typeof perf !== 'object') return null
+
+  const ttft = (perf as Record<string, unknown>).ttft_ms
+  return typeof ttft === 'number' && Number.isFinite(ttft) ? ttft : null
+}
+
+function estimateTokens(text: string) {
+  return Math.max(0, Math.round(text.length / 4))
+}
+
+function tokensPerSecond(tokens: number | null, elapsedMs: number | null) {
+  if (tokens == null || elapsedMs == null || elapsedMs <= 0) return null
+  return tokens / (elapsedMs / 1000)
+}
+
+function formatTps(value: number | null, estimated: boolean) {
+  if (value == null || !Number.isFinite(value)) return 'calculating'
+  const prefix = estimated ? '~' : ''
+  return `${prefix}${value.toFixed(1)} tok/s`
+}
+
+function formatDuration(ms: number) {
+  if (ms < 1000) return `${Math.round(ms)}ms`
+  return `${(ms / 1000).toFixed(1)}s`
 }
 
 // -- Message rendering --------------------------------------------------------
@@ -667,18 +819,25 @@ function formatValue(value: unknown) {
 
 // -- Usage -------------------------------------------------------------------
 
-function UsageBar({ usage }: { usage: Record<string, unknown> }) {
+function UsageBar({
+  usage,
+  latencyMs,
+}: {
+  usage: Record<string, unknown>
+  latencyMs: number | null
+}) {
   const input = usage.input_tokens ?? usage.prompt_tokens
   const output = usage.output_tokens ?? usage.completion_tokens
   const total = usage.total_tokens
 
-  if (!input && !output && !total) return null
+  if (!input && !output && !total && latencyMs == null) return null
 
   return (
     <div className="flex items-center gap-3 text-[11px] text-slate-500">
       {input != null && <span>in {String(input)}</span>}
       {output != null && <span>out {String(output)}</span>}
       {total != null && <span>total {String(total)}</span>}
+      {latencyMs != null && <span>elapsed {formatDuration(latencyMs)}</span>}
     </div>
   )
 }

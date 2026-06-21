@@ -41,6 +41,9 @@ export type ThreadStreamState = {
   error: string | null
   provider: string | null
   modelName: string | null
+  startedAt: number
+  firstTokenAt: number | null
+  ttftMs: number | null
 }
 
 export type ChatStatus = 'idle' | 'streaming' | 'done'
@@ -81,6 +84,9 @@ const EMPTY_THREAD: ThreadStreamState = {
   error: null,
   provider: null,
   modelName: null,
+  startedAt: 0,
+  firstTokenAt: null,
+  ttftMs: null,
 }
 
 function initState(): State {
@@ -95,11 +101,17 @@ function ensureThread(
 ): Record<string, ThreadStreamState> {
   const existing = threads[threadId]
   if (!existing) {
-    return { ...threads, [threadId]: { ...EMPTY_THREAD } }
+    return {
+      ...threads,
+      [threadId]: { ...EMPTY_THREAD, startedAt: Date.now() },
+    }
   }
   // If the thread is done/error, this is a new turn — reset it
   if (existing.status === 'done' || existing.status === 'error') {
-    return { ...threads, [threadId]: { ...EMPTY_THREAD } }
+    return {
+      ...threads,
+      [threadId]: { ...EMPTY_THREAD, startedAt: Date.now() },
+    }
   }
   // Thread is actively streaming — keep as-is
   return threads
@@ -130,11 +142,22 @@ function reducer(state: State, action: Action): State {
     case 'TEXT_DELTA': {
       const threads = ensureThread(state.threads, action.threadId)
       const t = threads[action.threadId]
+      const hasFirstToken = t.firstTokenAt != null
+      const firstTokenAt =
+        hasFirstToken || !action.delta.trim() ? t.firstTokenAt : Date.now()
       return {
         ...state,
         threads: {
           ...threads,
-          [action.threadId]: { ...t, text: t.text + action.delta },
+          [action.threadId]: {
+            ...t,
+            text: t.text + action.delta,
+            firstTokenAt,
+            ttftMs:
+              firstTokenAt != null
+                ? Math.max(0, firstTokenAt - t.startedAt)
+                : t.ttftMs,
+          },
         },
       }
     }
@@ -225,6 +248,7 @@ function reducer(state: State, action: Action): State {
             timeline,
             latencyMs: action.latencyMs,
             usage: action.usage,
+            ttftMs: readTtftMs(action.usage) ?? t.ttftMs,
           },
         },
       }
@@ -459,4 +483,12 @@ function thinkingFromDone(
   }
 
   return null
+}
+
+function readTtftMs(usage: Record<string, unknown> | null) {
+  const perf = usage?.perf
+  if (!perf || typeof perf !== 'object') return null
+
+  const ttft = (perf as Record<string, unknown>).ttft_ms
+  return typeof ttft === 'number' && Number.isFinite(ttft) ? ttft : null
 }
