@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { BotMessageSquare, Cpu } from 'lucide-react'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -201,7 +202,9 @@ export function DashboardPage() {
                 <EmptyState
                   isLoading={isLoading}
                   loadingText="Fetching models..."
-                  text="No active models found yet."
+                  text="No active models found"
+                  description="Models are synced from the agent runtime registry."
+                  icon={Cpu}
                 />
               )}
             </CardContent>
@@ -237,7 +240,19 @@ export function DashboardPage() {
                 <EmptyState
                   isLoading={isLoading}
                   loadingText="Fetching sessions..."
-                  text="No playground sessions yet."
+                  text="No playground sessions yet"
+                  description="Create your first playground to start comparing models."
+                  icon={BotMessageSquare}
+                  action={
+                    <Button
+                      size="sm"
+                      className="mt-1"
+                      disabled={isCreating}
+                      onClick={handleNewPlayground}
+                    >
+                      {isCreating ? 'Creating...' : 'New playground'}
+                    </Button>
+                  }
                 />
               )}
             </CardContent>
@@ -263,16 +278,33 @@ function EmptyState({
   isLoading,
   loadingText,
   text,
+  description,
+  icon: Icon,
+  action,
 }: {
   isLoading: boolean
   loadingText: string
   text: string
+  description?: string
+  icon?: React.ComponentType<{ className?: string }>
+  action?: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-44 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white px-5 text-center">
-      <p className="text-sm font-medium text-slate-500">
-        {isLoading ? loadingText : text}
-      </p>
+    <div className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-slate-300 bg-white px-5 text-center">
+      {isLoading ? (
+        <p className="text-sm font-medium text-slate-500">{loadingText}</p>
+      ) : (
+        <>
+          {Icon && <Icon className="size-8 text-slate-300" />}
+          <div>
+            <p className="text-sm font-medium text-slate-500">{text}</p>
+            {description && (
+              <p className="mt-1 text-xs text-slate-400">{description}</p>
+            )}
+          </div>
+          {action}
+        </>
+      )}
     </div>
   )
 }
