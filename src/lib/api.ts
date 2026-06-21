@@ -4,6 +4,8 @@ const API_BASE_URL = (
 
 export const TOKEN_STORAGE_KEY = 'model_playground_token'
 
+// ── Types ────────────────────────────────────────────────────────────────────
+
 export type TokenResponse = {
   access_token: string
   token_type: string
@@ -26,20 +28,43 @@ export type Model = {
   config: Record<string, unknown> | null
 }
 
-export type CreateModelPayload = {
-  provider: 'openai' | 'openrouter'
-  model_id: string
-  name: string
-  enabled: boolean
-  supports_reasoning: boolean
-  sort_order: number
-  config: Record<string, unknown> | null
-}
-
 export type PlaygroundSession = {
   id: string
   title: string
   created_at: string | null
+}
+
+export type Message = {
+  id: number
+  role: string
+  content: string
+  latency_ms: number | null
+  provider: string | null
+  model: string | null
+  usage: Record<string, unknown> | null
+  thinking: Record<string, unknown> | null
+  tool_name: string | null
+  tool_call_id: string | null
+  tool_input: Record<string, unknown> | null
+  output_preview: string | null
+  output_delta_count: number | null
+  request_options: Record<string, unknown> | null
+  created_at: string | null
+}
+
+export type Thread = {
+  id: string
+  provider: string
+  model_name: string
+  display_name: string
+  messages: Message[]
+}
+
+export type PlaygroundDetail = {
+  id: string
+  title: string
+  created_at: string | null
+  threads: Thread[]
 }
 
 export type ModelsResponse = {
@@ -57,6 +82,8 @@ export type DashboardData = {
   totalSessions: number
 }
 
+// ── Error ────────────────────────────────────────────────────────────────────
+
 export class ApiError extends Error {
   status: number
 
@@ -65,6 +92,8 @@ export class ApiError extends Error {
     this.status = status
   }
 }
+
+// ── Base request ─────────────────────────────────────────────────────────────
 
 async function apiRequest<T>(
   path: string,
@@ -117,6 +146,8 @@ async function apiRequest<T>(
   return (await response.json()) as T
 }
 
+// ── Auth ─────────────────────────────────────────────────────────────────────
+
 export function login(email: string, password: string) {
   return apiRequest<TokenResponse>('/auth/login', {
     method: 'POST',
@@ -139,33 +170,54 @@ export function getCurrentUser(token: string) {
   return apiRequest<User>('/auth/me', {}, token)
 }
 
+// ── Models ───────────────────────────────────────────────────────────────────
+
 export function getModels(token: string) {
   return apiRequest<ModelsResponse>('/models', {}, token)
 }
 
-export function createModel(token: string, payload: CreateModelPayload) {
-  return apiRequest<Model>(
-    '/models',
-    {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    },
-    token,
-  )
-}
+// ── Playground CRUD ──────────────────────────────────────────────────────────
 
-export function getPlaygroundSessions(token: string) {
+export function getPlaygroundSessions(token: string, limit = 20, offset = 0) {
   return apiRequest<PlaygroundListResponse>(
-    '/playground?limit=20&offset=0',
+    `/playground?limit=${limit}&offset=${offset}`,
     {},
     token,
   )
 }
 
+export function getPlaygroundDetail(token: string, id: string) {
+  return apiRequest<PlaygroundDetail>(`/playground/${id}`, {}, token)
+}
+
+export function createPlayground(token: string, title = 'New Playground') {
+  return apiRequest<PlaygroundSession>(
+    '/playground',
+    { method: 'POST', body: JSON.stringify({ title }) },
+    token,
+  )
+}
+
+export function updatePlayground(token: string, id: string, title: string) {
+  return apiRequest<PlaygroundSession>(
+    `/playground/${id}`,
+    { method: 'PATCH', body: JSON.stringify({ title }) },
+    token,
+  )
+}
+
+export function deletePlayground(token: string, id: string) {
+  return apiRequest<void>(
+    `/playground/${id}`,
+    { method: 'DELETE' },
+    token,
+  )
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
 export function formatDate(value: string | null) {
-  if (!value) {
-    return 'No date'
-  }
+  if (!value) return 'No date'
 
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
@@ -173,6 +225,38 @@ export function formatDate(value: string | null) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value))
+}
+
+// ── Chat streaming ───────────────────────────────────────────────────────────
+
+export type ModelSelect = {
+  provider: string
+  model_name: string
+  reasoning_effort?: string | null
+}
+
+/** Build the path + body for a multi-model fanout chat. */
+export function multiChatPayload(
+  playgroundId: string,
+  message: string,
+  models: ModelSelect[],
+) {
+  return {
+    path: `/playground/${playgroundId}/chat`,
+    body: { message, models },
+  }
+}
+
+/** Build the path + body for a single-thread continue chat. */
+export function continueChatPayload(
+  playgroundId: string,
+  threadId: string,
+  message: string,
+) {
+  return {
+    path: `/playground/${playgroundId}/chat/${threadId}`,
+    body: { message },
+  }
 }
 
 export { API_BASE_URL }

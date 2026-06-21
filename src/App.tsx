@@ -1,15 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { AuthPage } from '@/components/AuthPage'
-import { HomePage } from '@/components/HomePage'
+import { DashboardPage } from '@/components/DashboardPage'
 import { LoadingScreen } from '@/components/LoadingScreen'
-import {
-  TOKEN_STORAGE_KEY,
-  getCurrentUser,
-  getModels,
-  getPlaygroundSessions,
-} from '@/lib/api'
-import type { DashboardData, User } from '@/lib/api'
+import { PlaygroundPage } from '@/components/PlaygroundPage'
+import { AuthProvider } from '@/lib/auth-context'
+import { getCurrentUser, TOKEN_STORAGE_KEY } from '@/lib/api'
+import type { User } from '@/lib/api'
 
 type AppStatus = 'checking' | 'authenticated' | 'unauthenticated'
 
@@ -21,48 +19,14 @@ function App() {
     localStorage.getItem(TOKEN_STORAGE_KEY) ? 'checking' : 'unauthenticated',
   )
   const [user, setUser] = useState<User | null>(null)
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
-    models: [],
-    sessions: [],
-    totalSessions: 0,
-  })
-  const [dashboardError, setDashboardError] = useState<string | null>(null)
-  const [isDashboardLoading, setIsDashboardLoading] = useState(false)
-
-  const loadDashboard = useCallback((activeToken: string) => {
-    setIsDashboardLoading(true)
-    setDashboardError(null)
-
-    Promise.all([getModels(activeToken), getPlaygroundSessions(activeToken)])
-      .then(([modelsResponse, sessionsResponse]) => {
-        setDashboardData({
-          models: modelsResponse.models,
-          sessions: sessionsResponse.sessions,
-          totalSessions: sessionsResponse.total,
-        })
-      })
-      .catch((error: unknown) => {
-        setDashboardError(
-          error instanceof Error
-            ? error.message
-            : 'Could not load dashboard data.',
-        )
-      })
-      .finally(() => {
-        setIsDashboardLoading(false)
-      })
-  }, [])
 
   useEffect(() => {
-    if (!token || status !== 'checking') {
-      return
-    }
+    if (!token || status !== 'checking') return
 
     getCurrentUser(token)
       .then((profile) => {
         setUser(profile)
         setStatus('authenticated')
-        loadDashboard(token)
       })
       .catch(() => {
         localStorage.removeItem(TOKEN_STORAGE_KEY)
@@ -70,22 +34,19 @@ function App() {
         setUser(null)
         setStatus('unauthenticated')
       })
-  }, [loadDashboard, status, token])
+  }, [status, token])
 
   function completeAuth(nextToken: string, profile: User) {
     localStorage.setItem(TOKEN_STORAGE_KEY, nextToken)
     setToken(nextToken)
     setUser(profile)
     setStatus('authenticated')
-    loadDashboard(nextToken)
   }
 
   function handleLogout() {
     localStorage.removeItem(TOKEN_STORAGE_KEY)
     setToken(null)
     setUser(null)
-    setDashboardData({ models: [], sessions: [], totalSessions: 0 })
-    setDashboardError(null)
     setStatus('unauthenticated')
   }
 
@@ -93,22 +54,21 @@ function App() {
     return <LoadingScreen />
   }
 
-  if (status === 'authenticated' && user && token) {
-    return (
-      <HomePage
-        dashboardData={dashboardData}
-        dashboardError={dashboardError}
-        isDashboardLoading={isDashboardLoading}
-        onModelCreated={() => loadDashboard(token)}
-        onRefresh={() => loadDashboard(token)}
-        onLogout={handleLogout}
-        token={token}
-        user={user}
-      />
-    )
+  if (status === 'unauthenticated' || !token || !user) {
+    return <AuthPage onAuthenticated={completeAuth} />
   }
 
-  return <AuthPage onAuthenticated={completeAuth} />
+  return (
+    <BrowserRouter>
+      <AuthProvider value={{ token, user, onLogout: handleLogout }}>
+        <Routes>
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/playground/:id" element={<PlaygroundPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  )
 }
 
 export default App
