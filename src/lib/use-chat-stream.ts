@@ -24,6 +24,8 @@ export type ThreadStreamState = {
   latencyMs: number | null
   usage: Record<string, unknown> | null
   error: string | null
+  provider: string | null
+  modelName: string | null
 }
 
 export type ChatStatus = 'idle' | 'streaming' | 'done'
@@ -37,6 +39,7 @@ type State = {
 
 type Action =
   | { type: 'START_STREAM' }
+  | { type: 'THREAD_META'; threadId: string; provider: string; modelName: string }
   | { type: 'TEXT_DELTA'; threadId: string; delta: string }
   | { type: 'THINKING_DELTA'; threadId: string; delta: string }
   | { type: 'TOOL_EVENT'; threadId: string; event: ToolEvent }
@@ -53,6 +56,8 @@ const EMPTY_THREAD: ThreadStreamState = {
   latencyMs: null,
   usage: null,
   error: null,
+  provider: null,
+  modelName: null,
 }
 
 function initState(): State {
@@ -82,6 +87,22 @@ function reducer(state: State, action: Action): State {
     case 'START_STREAM':
       // Don't clear threads — concurrent streams must coexist
       return { ...state, chatStatus: 'streaming' }
+
+    case 'THREAD_META': {
+      const threads = ensureThread(state.threads, action.threadId)
+      const t = threads[action.threadId]
+      return {
+        ...state,
+        threads: {
+          ...threads,
+          [action.threadId]: {
+            ...t,
+            provider: action.provider,
+            modelName: action.modelName,
+          },
+        },
+      }
+    }
 
     case 'TEXT_DELTA': {
       const threads = ensureThread(state.threads, action.threadId)
@@ -274,6 +295,14 @@ export function useChatStream(token: string, playgroundId: string) {
 function processEvent(event: SSEEvent, dispatch: (action: Action) => void) {
   switch (event.type) {
     case 'thread_start':
+      if (event.provider && event.model) {
+        dispatch({
+          type: 'THREAD_META',
+          threadId: event.thread_id,
+          provider: event.provider,
+          modelName: event.model,
+        })
+      }
       break
 
     case 'text_delta':

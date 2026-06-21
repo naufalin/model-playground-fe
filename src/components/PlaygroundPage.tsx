@@ -404,9 +404,9 @@ export function PlaygroundPage() {
                 return (
                   <ThreadPanel
                     key={threadId}
-                    displayName={meta?.display_name ?? threadId}
-                    provider={meta?.provider ?? 'unknown'}
-                    modelName={meta?.model_name ?? threadId}
+                    displayName={meta?.display_name ?? stream?.modelName ?? threadId}
+                    provider={meta?.provider ?? stream?.provider ?? 'unknown'}
+                    modelName={meta?.model_name ?? stream?.modelName ?? threadId}
                     messages={historical}
                     streamState={stream}
                     onContinue={(msg) => handleContinue(threadId, msg)}

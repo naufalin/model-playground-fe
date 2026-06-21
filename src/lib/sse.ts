@@ -3,7 +3,7 @@ import { API_BASE_URL } from '@/lib/api'
 // ── SSE event types from the backend ─────────────────────────────────────────
 
 export type SSEEvent =
-  | { type: 'thread_start'; thread_id: string }
+  | { type: 'thread_start'; thread_id: string; provider?: string; model?: string }
   | { type: 'text_delta'; thread_id: string; delta: string }
   | { type: 'thinking_delta'; thread_id: string; delta: string }
   | { type: 'tool_start'; thread_id: string; tool: string; call_id: string; args: unknown }
