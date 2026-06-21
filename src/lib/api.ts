@@ -20,6 +20,20 @@ export type Model = {
   provider: string
   model_name: string
   display_name: string
+  is_active: boolean
+  supports_reasoning: boolean
+  sort_order: number
+  config: Record<string, unknown> | null
+}
+
+export type CreateModelPayload = {
+  provider: 'openai' | 'openrouter'
+  model_id: string
+  name: string
+  enabled: boolean
+  supports_reasoning: boolean
+  sort_order: number
+  config: Record<string, unknown> | null
 }
 
 export type PlaygroundSession = {
@@ -127,6 +141,17 @@ export function getCurrentUser(token: string) {
 
 export function getModels(token: string) {
   return apiRequest<ModelsResponse>('/models', {}, token)
+}
+
+export function createModel(token: string, payload: CreateModelPayload) {
+  return apiRequest<Model>(
+    '/models',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    token,
+  )
 }
 
 export function getPlaygroundSessions(token: string) {

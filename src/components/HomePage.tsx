@@ -1,3 +1,6 @@
+import { useState } from 'react'
+import type { FormEvent } from 'react'
+
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -7,13 +10,35 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { formatDate } from '@/lib/api'
-import type { DashboardData, User } from '@/lib/api'
+import { Input } from '@/components/ui/input'
+import { createModel, formatDate } from '@/lib/api'
+import type { CreateModelPayload, DashboardData, User } from '@/lib/api'
+
+type ModelFormState = {
+  provider: 'openai' | 'openrouter'
+  modelId: string
+  name: string
+  enabled: boolean
+  supportsReasoning: boolean
+  sortOrder: string
+  config: string
+}
+
+const initialModelForm: ModelFormState = {
+  provider: 'openrouter',
+  modelId: '',
+  name: '',
+  enabled: true,
+  supportsReasoning: false,
+  sortOrder: '0',
+  config: '',
+}
 
 export function HomePage({
   dashboardData,
   dashboardError,
   isDashboardLoading,
+  onModelCreated,
   onLogout,
   onRefresh,
   token,
@@ -22,12 +47,82 @@ export function HomePage({
   dashboardData: DashboardData
   dashboardError: string | null
   isDashboardLoading: boolean
+  onModelCreated: () => void
   onLogout: () => void
   onRefresh: () => void
   token: string
   user: User
 }) {
   const displayName = user.display_name || user.email.split('@')[0]
+  const [isAddingModel, setIsAddingModel] = useState(false)
+  const [modelForm, setModelForm] = useState<ModelFormState>(initialModelForm)
+  const [modelFormError, setModelFormError] = useState<string | null>(null)
+  const [modelFormSuccess, setModelFormSuccess] = useState<string | null>(null)
+  const [isCreatingModel, setIsCreatingModel] = useState(false)
+
+  function updateModelForm<K extends keyof ModelFormState>(
+    key: K,
+    value: ModelFormState[K],
+  ) {
+    setModelForm((current) => ({ ...current, [key]: value }))
+  }
+
+  async function handleCreateModel(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setModelFormError(null)
+    setModelFormSuccess(null)
+
+    const modelId = modelForm.modelId.trim()
+    const name = modelForm.name.trim()
+    if (!modelId || !name) {
+      setModelFormError('Model ID and display name are required.')
+      return
+    }
+
+    const sortOrder = Number(modelForm.sortOrder)
+    if (!Number.isInteger(sortOrder)) {
+      setModelFormError('Sort order must be a whole number.')
+      return
+    }
+
+    let config: CreateModelPayload['config'] = null
+    if (modelForm.config.trim()) {
+      try {
+        const parsed = JSON.parse(modelForm.config) as unknown
+        if (parsed === null || Array.isArray(parsed) || typeof parsed !== 'object') {
+          setModelFormError('Config must be a JSON object.')
+          return
+        }
+        config = parsed as Record<string, unknown>
+      } catch {
+        setModelFormError('Config must be valid JSON.')
+        return
+      }
+    }
+
+    setIsCreatingModel(true)
+    try {
+      const created = await createModel(token, {
+        provider: modelForm.provider,
+        model_id: modelId,
+        name,
+        enabled: modelForm.enabled,
+        supports_reasoning: modelForm.supportsReasoning,
+        sort_order: sortOrder,
+        config,
+      })
+      setModelForm(initialModelForm)
+      setIsAddingModel(false)
+      setModelFormSuccess(`${created.display_name} was added.`)
+      onModelCreated()
+    } catch (error) {
+      setModelFormError(
+        error instanceof Error ? error.message : 'Could not add model.',
+      )
+    } finally {
+      setIsCreatingModel(false)
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#f7f3ea] text-slate-950">
@@ -107,13 +202,140 @@ export function HomePage({
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <Card>
-            <CardHeader>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                {isDashboardLoading ? 'Loading registry' : 'Available models'}
-              </p>
-              <CardTitle>Model registry</CardTitle>
+            <CardHeader className="items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  {isDashboardLoading ? 'Loading registry' : 'Available models'}
+                </p>
+                <CardTitle>Model registry</CardTitle>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsAddingModel((current) => !current)
+                  setModelFormError(null)
+                  setModelFormSuccess(null)
+                }}
+              >
+                {isAddingModel ? 'Close' : 'Add model'}
+              </Button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {modelFormSuccess ? (
+                <Alert>
+                  <AlertDescription>{modelFormSuccess}</AlertDescription>
+                </Alert>
+              ) : null}
+
+              {isAddingModel ? (
+                <form
+                  className="space-y-4 rounded-lg border border-slate-200 bg-white p-4"
+                  onSubmit={handleCreateModel}
+                >
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="space-y-1.5 text-sm font-medium text-slate-700">
+                      <span>Provider</span>
+                      <select
+                        className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                        value={modelForm.provider}
+                        onChange={(event) =>
+                          updateModelForm(
+                            'provider',
+                            event.target.value as ModelFormState['provider'],
+                          )
+                        }
+                      >
+                        <option value="openrouter">OpenRouter</option>
+                        <option value="openai">OpenAI</option>
+                      </select>
+                    </label>
+                    <label className="space-y-1.5 text-sm font-medium text-slate-700">
+                      <span>Sort order</span>
+                      <Input
+                        inputMode="numeric"
+                        value={modelForm.sortOrder}
+                        onChange={(event) =>
+                          updateModelForm('sortOrder', event.target.value)
+                        }
+                      />
+                    </label>
+                    <label className="space-y-1.5 text-sm font-medium text-slate-700">
+                      <span>Model ID</span>
+                      <Input
+                        placeholder="vendor/model"
+                        value={modelForm.modelId}
+                        onChange={(event) =>
+                          updateModelForm('modelId', event.target.value)
+                        }
+                      />
+                    </label>
+                    <label className="space-y-1.5 text-sm font-medium text-slate-700">
+                      <span>Display name</span>
+                      <Input
+                        placeholder="Vendor Model"
+                        value={modelForm.name}
+                        onChange={(event) =>
+                          updateModelForm('name', event.target.value)
+                        }
+                      />
+                    </label>
+                  </div>
+
+                  <label className="space-y-1.5 text-sm font-medium text-slate-700">
+                    <span>Config JSON</span>
+                    <textarea
+                      className="min-h-24 w-full resize-y rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                      placeholder='{"tier":"test"}'
+                      value={modelForm.config}
+                      onChange={(event) =>
+                        updateModelForm('config', event.target.value)
+                      }
+                    />
+                  </label>
+
+                  <div className="flex flex-wrap gap-4 text-sm font-medium text-slate-700">
+                    <label className="flex items-center gap-2">
+                      <input
+                        checked={modelForm.enabled}
+                        className="h-4 w-4"
+                        type="checkbox"
+                        onChange={(event) =>
+                          updateModelForm('enabled', event.target.checked)
+                        }
+                      />
+                      Enabled
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        checked={modelForm.supportsReasoning}
+                        className="h-4 w-4"
+                        type="checkbox"
+                        onChange={(event) =>
+                          updateModelForm(
+                            'supportsReasoning',
+                            event.target.checked,
+                          )
+                        }
+                      />
+                      Supports reasoning
+                    </label>
+                  </div>
+
+                  {modelFormError ? (
+                    <Alert variant="destructive">
+                      <AlertDescription>{modelFormError}</AlertDescription>
+                    </Alert>
+                  ) : null}
+
+                  <div className="flex justify-end">
+                    <Button type="submit" disabled={isCreatingModel}>
+                      {isCreatingModel ? 'Adding model...' : 'Add model'}
+                    </Button>
+                  </div>
+                </form>
+              ) : null}
+
               {dashboardData.models.length > 0 ? (
                 <div className="space-y-3">
                   {dashboardData.models.map((model) => (

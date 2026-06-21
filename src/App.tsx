@@ -99,6 +99,7 @@ function App() {
         dashboardData={dashboardData}
         dashboardError={dashboardError}
         isDashboardLoading={isDashboardLoading}
+        onModelCreated={() => loadDashboard(token)}
         onRefresh={() => loadDashboard(token)}
         onLogout={handleLogout}
         token={token}
