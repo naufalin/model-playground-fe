@@ -12,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { MarkdownRenderer } from '@/components/MarkdownRenderer'
 import type { Message } from '@/lib/api'
 import type { ThreadStreamState } from '@/lib/use-chat-stream'
 
@@ -176,7 +177,7 @@ export function ThreadPanel({
                   AI
                 </div>
                 <div className="min-w-0 flex-1 rounded-lg bg-slate-50 px-3 py-2 text-sm leading-relaxed">
-                  <span className="whitespace-pre-wrap">{streamState.text}</span>
+                  <MarkdownRenderer content={streamState.text} />
                   {isStreaming && (
                     <span className="ml-0.5 inline-block size-1.5 animate-pulse rounded-full bg-slate-400" />
                   )}
@@ -296,7 +297,7 @@ function MessageBubble({ message }: { message: Message }) {
 
         {/* Content */}
         <div className="rounded-lg bg-slate-50 px-3 py-2 text-sm leading-relaxed">
-          <span className="whitespace-pre-wrap">{message.content}</span>
+          <MarkdownRenderer content={message.content} />
         </div>
 
         {/* Metadata */}

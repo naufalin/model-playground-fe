@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { MessageSquarePlus, Pencil, Square, Trash2 } from 'lucide-react'
+import { MessageSquarePlus, Pencil, Plus, Square, Trash2 } from 'lucide-react'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,7 @@ import { ThreadPanel } from '@/components/ThreadPanel'
 import { useAuth } from '@/lib/use-auth'
 import { useChatStream } from '@/lib/use-chat-stream'
 import {
+  createPlayground,
   deletePlayground,
   getModels,
   getPlaygroundDetail,
@@ -55,6 +56,9 @@ export function PlaygroundPage() {
 
   // Delete
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // New playground
+  const [isCreating, setIsCreating] = useState(false)
 
   // ── Load data ─────────────────────────────────────────────────────────────
 
@@ -173,6 +177,20 @@ export function PlaygroundPage() {
     }
   }
 
+  async function handleNewPlayground() {
+    setIsCreating(true)
+    try {
+      const now = new Date()
+      const title = `Playground ${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+      const result = await createPlayground(token, title)
+      navigate(`/playground/${result.id}`)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not create playground.')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   // ── Derived state ─────────────────────────────────────────────────────────
 
   const displayName = user.display_name || user.email.split('@')[0]
@@ -246,6 +264,15 @@ export function PlaygroundPage() {
           <div className="flex items-center gap-2">
             {!isLoading && detail && (
               <>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={handleNewPlayground}
+                  disabled={isCreating}
+                  title="New playground"
+                >
+                  <Plus className="size-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon-sm"
