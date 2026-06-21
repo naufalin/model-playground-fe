@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, BrowserRouter, Routes, useParams } from 'react-router-dom'
 
 import { AuthPage } from '@/components/AuthPage'
 import { DashboardPage } from '@/components/DashboardPage'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { PlaygroundPage } from '@/components/PlaygroundPage'
 import { AuthProvider } from '@/lib/auth-context'
-import { getCurrentUser, TOKEN_STORAGE_KEY } from '@/lib/api'
 import type { User } from '@/lib/api'
+import { getCurrentUser, TOKEN_STORAGE_KEY } from '@/lib/api'
+
+function PlaygroundPageWrapper() {
+  const { id } = useParams<{ id: string }>()
+  return <PlaygroundPage key={id} />
+}
 
 type AppStatus = 'checking' | 'authenticated' | 'unauthenticated'
 
@@ -63,7 +68,7 @@ function App() {
       <AuthProvider value={{ token, user, onLogout: handleLogout }}>
         <Routes>
           <Route path="/" element={<DashboardPage />} />
-          <Route path="/playground/:id" element={<PlaygroundPage />} />
+          <Route path="/playground/:id" element={<PlaygroundPageWrapper />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
