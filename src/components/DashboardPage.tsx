@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BotMessageSquare, Cpu } from 'lucide-react'
+import { ArrowRight, BotMessageSquare, Cpu } from 'lucide-react'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -33,6 +33,8 @@ export function DashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
+  const [prompt, setPrompt] = useState('')
+  const promptRef = useRef<HTMLInputElement>(null)
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -62,18 +64,13 @@ export function DashboardPage() {
     fetchDashboard()
   }, [fetchDashboard])
 
-  /** Refresh on button click — resets loading + error first. */
-  function loadDashboard() {
-    setIsLoading(true)
-    setError(null)
-    fetchDashboard()
-  }
-
-  async function handleNewPlayground() {
+  async function handleNewPlayground(initialPrompt?: string) {
     setIsCreating(true)
     try {
       const created = await createPlayground(token)
-      navigate(`/playground/${created.id}`)
+      navigate(`/playground/${created.id}`, {
+        state: initialPrompt ? { initialPrompt } : undefined,
+      })
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : 'Could not create playground.',
@@ -81,6 +78,14 @@ export function DashboardPage() {
     } finally {
       setIsCreating(false)
     }
+  }
+
+  function handlePromptSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const trimmed = prompt.trim()
+    if (!trimmed) return
+    setPrompt('')
+    handleNewPlayground(trimmed)
   }
 
   return (
@@ -111,7 +116,7 @@ export function DashboardPage() {
       <div className="mx-auto max-w-7xl px-6 py-8">
         <section className="grid gap-5 lg:grid-cols-[1.35fr_0.65fr]">
           <div className="rounded-lg bg-slate-950 p-8 text-white shadow-sm">
-            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-300">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-mint-500">
               Workspace ready
             </p>
             <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -121,27 +126,37 @@ export function DashboardPage() {
               Select models, send a prompt, and compare responses side by side.
               Create a new playground or pick up where you left off.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 space-y-3">
               <Button
                 size="lg"
                 className="bg-white text-slate-950 hover:bg-slate-100"
                 disabled={isCreating}
-                onClick={handleNewPlayground}
+                onClick={() => handleNewPlayground()}
               >
                 {isCreating ? 'Creating...' : 'New playground'}
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
-                onClick={loadDashboard}
-              >
-                Refresh overview
-              </Button>
+              <form onSubmit={handlePromptSubmit} className="relative">
+                <input
+                  ref={promptRef}
+                  type="text"
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Ask anything — start a playground with a prompt..."
+                  disabled={isCreating}
+                  className="w-full rounded-lg border border-white/15 bg-white/10 px-4 py-3 pr-12 text-sm text-white placeholder:text-slate-400 focus:border-mint-500 focus:outline-none focus:ring-2 focus:ring-mint-500/30"
+                />
+                <button
+                  type="submit"
+                  disabled={isCreating || !prompt.trim()}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 transition-colors hover:text-white disabled:opacity-30"
+                >
+                  <ArrowRight className="size-4" />
+                </button>
+              </form>
             </div>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-3 lg:grid-cols-1">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
             <MetricCard
               label="Available models"
               value={String(data.models.length)}
@@ -149,10 +164,6 @@ export function DashboardPage() {
             <MetricCard
               label="Recent sessions"
               value={String(data.totalSessions)}
-            />
-            <MetricCard
-              label="Token"
-              value={`${token.slice(0, 8)}...`}
             />
           </div>
         </section>
@@ -175,27 +186,29 @@ export function DashboardPage() {
               {data.models.length > 0 ? (
                 <div className="space-y-3">
                   {data.models.map((model) => (
-                    <div
-                      className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3"
+                    <button
                       key={model.id}
+                      type="button"
+                      className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition-all duration-150 hover:border-mint-300 hover:shadow-sm"
+                      onClick={() => handleNewPlayground()}
                     >
-                      <div>
-                        <p className="font-semibold">{model.display_name}</p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {model.provider} / {model.model_name}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <span className="size-2 shrink-0 rounded-full bg-mint-500" />
+                        <div>
+                          <p className="font-semibold">{model.display_name}</p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {model.provider} / {model.model_name}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {model.supports_reasoning && (
-                          <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+                          <Badge variant="secondary" className="bg-mint-50 text-mint-600">
                             Reasoning
                           </Badge>
                         )}
-                        <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">
-                          Active
-                        </Badge>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -222,7 +235,7 @@ export function DashboardPage() {
                 <div className="space-y-3">
                   {data.sessions.map((session) => (
                     <button
-                      className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-slate-300 hover:bg-slate-50"
+                      className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition-all duration-150 hover:border-mint-300 hover:bg-slate-50 hover:shadow-sm"
                       key={session.id}
                       onClick={() => navigate(`/playground/${session.id}`)}
                     >
@@ -232,7 +245,9 @@ export function DashboardPage() {
                           Created {formatDate(session.created_at)}
                         </p>
                       </div>
-                      <Badge variant="secondary">{session.id}</Badge>
+                      <Badge variant="secondary" className="bg-mint-50 text-mint-600 font-mono text-xs">
+                        {session.id}
+                      </Badge>
                     </button>
                   ))}
                 </div>
@@ -248,7 +263,7 @@ export function DashboardPage() {
                       size="sm"
                       className="mt-1"
                       disabled={isCreating}
-                      onClick={handleNewPlayground}
+                      onClick={() => handleNewPlayground()}
                     >
                       {isCreating ? 'Creating...' : 'New playground'}
                     </Button>

@@ -11,6 +11,18 @@ type Props = {
   content: string
 }
 
+/** Recursively extract raw text from React nodes (rehype-highlight wraps tokens in <span>s). */
+function extractText(node: React.ReactNode): string {
+  if (typeof node === 'string') return node
+  if (typeof node === 'number') return String(node)
+  if (!node) return ''
+  if (Array.isArray(node)) return node.map(extractText).join('')
+  if (typeof node === 'object' && 'props' in node) {
+    return extractText((node as React.ReactElement<{ children?: React.ReactNode }>).props.children)
+  }
+  return ''
+}
+
 const components: Components = {
   // Code blocks with copy button
   pre({ children }) {
@@ -31,8 +43,11 @@ const components: Components = {
       )
     }
 
+    const rawText = extractText(children).replace(/\n$/, '')
     return (
-      <CodeBlock language={match[1]}>{String(children).replace(/\n$/, '')}</CodeBlock>
+      <CodeBlock language={match[1]} rawText={rawText}>
+        {children}
+      </CodeBlock>
     )
   },
   // Headings
@@ -123,14 +138,16 @@ export function MarkdownRenderer({ content }: Props) {
 function CodeBlock({
   language,
   children,
+  rawText,
 }: {
   language: string
-  children: string
+  children: React.ReactNode
+  rawText: string
 }) {
   const [copied, setCopied] = useState(false)
 
   function handleCopy() {
-    navigator.clipboard.writeText(children)
+    navigator.clipboard.writeText(rawText)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
