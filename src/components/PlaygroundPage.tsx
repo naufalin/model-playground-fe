@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { MessageSquarePlus, Pencil, Plus, Square, Trash2 } from 'lucide-react'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -34,6 +34,7 @@ export function PlaygroundPage() {
   const { id } = useParams<{ id: string }>()
   const { token, user, onLogout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   // Data
   const [detail, setDetail] = useState<PlaygroundDetail | null>(null)
@@ -115,6 +116,19 @@ export function PlaygroundPage() {
       inputRef.current.select()
     }
   }, [isEditing])
+
+  // Pre-fill message from dashboard quick-start prompt
+  const initialPrompt = (location.state as { initialPrompt?: string } | null)
+    ?.initialPrompt
+  const promptPrefilledRef = useRef(false)
+
+  useEffect(() => {
+    if (!initialPrompt || promptPrefilledRef.current || isLoading) return
+    promptPrefilledRef.current = true
+    setMessage(initialPrompt)
+    // Clear state from history so refresh doesn't re-fill
+    window.history.replaceState({}, '', location.pathname)
+  }, [initialPrompt, isLoading, location.pathname])
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
