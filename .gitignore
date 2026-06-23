@@ -40,3 +40,5 @@ coverage/
 *.sln
 *.sw?
 Thumbs.db
+
+TODO.md
