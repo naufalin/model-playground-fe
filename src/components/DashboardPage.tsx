@@ -126,29 +126,29 @@ export function DashboardPage() {
   const remainingModelCount = Math.max(0, data.models.length - 3)
 
   return (
-    <main className="min-h-screen bg-[#F4EFE6] text-[#080B14]">
+    <main className="glass-mesh-bg min-h-screen bg-[#080B14] text-white">
       {/* ── Navbar ──────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 border-b border-[#E3DACC] bg-[#F4EFE6]/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#080B14]/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-lg bg-[#080B14] text-xs font-black text-white shadow-sm shadow-[#080B14]/20">
+            <div className="grid size-9 place-items-center rounded-lg bg-white text-xs font-black text-[#080B14] shadow-sm">
               MP
             </div>
             <div>
-              <p className="text-sm font-semibold tracking-tight">Model Playground</p>
-              <p className="text-[11px] text-[#6B7280]">Dashboard</p>
+              <p className="text-sm font-semibold tracking-tight text-white">Model Playground</p>
+              <p className="text-[11px] text-white/50">Dashboard</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium">{displayName}</p>
-              <p className="text-[11px] text-[#6B7280]">{user.email}</p>
+              <p className="text-sm font-medium text-white/70">{displayName}</p>
+              <p className="text-[11px] text-white/40">{user.email}</p>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onLogout}
-              className="rounded-full border border-[#E3DACC] bg-[#FFFCF6] px-3.5 text-xs font-medium text-[#6B7280] hover:bg-[#F8F3EA] hover:text-[#080B14]"
+              className="rounded-full border border-white/12 bg-white/8 px-3.5 text-xs font-medium text-white/60 hover:bg-white/12 hover:text-white"
             >
               Logout
             </Button>
@@ -156,14 +156,11 @@ export function DashboardPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-6 py-8">
+      <div className="relative z-10 mx-auto max-w-6xl px-6 py-8">
         {/* ── Hero: actions + stats ──────────────────────────────────────── */}
         <section className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
           {/* Left — actions */}
-          <div
-            className="rounded-3xl p-7 text-white shadow-[0_24px_70px_rgba(8,11,20,0.18)]"
-            style={{ background: 'linear-gradient(135deg, #080B14 0%, #101827 100%)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
+          <div className="rounded-3xl border border-white/10 p-7 text-white" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)' }}>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#5EF2C1]">
               Workspace ready
             </p>
@@ -173,7 +170,7 @@ export function DashboardPage() {
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button
                 size="default"
-                className="bg-white text-[#080B14] hover:bg-[#F8F3EA] rounded-xl"
+                className="bg-white/90 text-[#080B14] hover:bg-white rounded-xl font-semibold"
                 disabled={isCreating}
                 onClick={() => handleNewPlayground()}
               >
@@ -193,21 +190,21 @@ export function DashboardPage() {
                   <ChevronDown className="ml-1 size-3.5" />
                 </Button>
                 {showSessionPicker && data.sessions.length > 0 && (
-                  <div className="absolute left-0 top-full z-20 mt-2 w-72 overflow-hidden rounded-xl border border-[#E3DACC] bg-[#FFFCF6] shadow-lg shadow-[#080B14]/10">
+                  <div className="glass-card absolute left-0 top-full z-20 mt-2 w-72 overflow-hidden rounded-xl">
                     {data.sessions.slice(0, 8).map((session) => (
                       <button
                         key={session.id}
                         type="button"
-                        className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm transition hover:bg-[#F8F3EA]"
+                        className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm text-white transition hover:bg-white/8"
                         onClick={() => {
                           setShowSessionPicker(false)
                           navigate(`/playground/${session.id}`)
                         }}
                       >
-                        <span className="truncate font-medium text-[#080B14]">
+                        <span className="truncate font-medium">
                           {session.title}
                         </span>
-                        <ArrowRight className="ml-2 size-3.5 shrink-0 text-[#9CA3AF]" />
+                        <ArrowRight className="ml-2 size-3.5 shrink-0 text-white/30" />
                       </button>
                     ))}
                   </div>
@@ -242,10 +239,10 @@ export function DashboardPage() {
         <section className="mt-6">
           <form
             onSubmit={handlePromptSubmit}
-            className="rounded-3xl border border-[#DDD2C2] bg-[#FFFCF6] p-5 shadow-[0_18px_50px_rgba(8,11,20,0.08)]"
+            className="glass-card rounded-3xl p-5"
           >
             <div className="flex items-center gap-3">
-              <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#F1EADF] text-[#111827]">
+              <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/8 text-white/70">
                 <Zap className="size-4" />
               </div>
               <input
@@ -255,13 +252,13 @@ export function DashboardPage() {
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Ask something to compare..."
                 disabled={isCreating}
-                className="flex-1 bg-transparent text-sm text-[#080B14] placeholder:text-[#9CA3AF] focus:outline-none"
+                className="flex-1 bg-transparent text-sm text-white placeholder:text-white/35 focus:outline-none"
               />
               <Button
                 type="submit"
                 size="sm"
                 disabled={isCreating || !prompt.trim()}
-                className="shrink-0 rounded-full bg-[#080B14] px-4 text-white shadow-[0_6px_20px_rgba(8,11,20,0.15)] hover:bg-[#111827]"
+                className="shrink-0 rounded-full bg-white/90 px-4 text-[#080B14] font-semibold shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:bg-white"
               >
                 Run comparison
                 <ArrowRight className="ml-1 size-3.5" />
@@ -270,7 +267,7 @@ export function DashboardPage() {
 
             {/* Model chips */}
             {data.models.length > 0 && (
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-[#E3DACC] pt-3">
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-white/10 pt-3">
                 {quickModelChips.map((model) => {
                   const selected = selectedQuickModels.some((m) => m.id === model.id)
                   return (
@@ -282,13 +279,13 @@ export function DashboardPage() {
                         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all',
                         selected
                           ? 'border-[#B8F3DC] bg-[#E8FFF6] text-[#047857]'
-                          : 'border-[#E3DACC] bg-white text-[#111827] hover:border-[#CDBFAE] hover:bg-[#F8F3EA]',
+                          : 'border-white/10 bg-white/5 text-white/60 hover:border-white/20 hover:bg-white/10',
                       )}
                     >
                       <span
                         className={cn(
                           'size-1.5 rounded-full',
-                          selected ? 'bg-[#047857]' : 'bg-[#CDBFAE]',
+                          selected ? 'bg-[#047857]' : 'bg-white/25',
                         )}
                       />
                       {model.display_name}
@@ -299,7 +296,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setShowAllModels(true)}
-                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-[#CDBFAE] px-2.5 py-1 text-xs font-medium text-[#6B7280] transition-colors hover:border-[#B8B3A6] hover:text-[#111827]"
+                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-white/15 px-2.5 py-1 text-xs font-medium text-white/40 transition-colors hover:border-white/25 hover:text-white/60"
                   >
                     +{remainingModelCount} more
                   </button>
@@ -308,7 +305,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setShowAllModels(false)}
-                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-[#6B7280] transition-colors hover:text-[#111827]"
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-white/40 transition-colors hover:text-white/60"
                   >
                     Show less
                   </button>
@@ -327,12 +324,12 @@ export function DashboardPage() {
 
         {/* ── Model registry + recent work ───────────────────────────────── */}
         <section className="mt-8 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-          <Card className="rounded-3xl border-[#E3DACC] bg-[#FFFCF6] shadow-[0_10px_30px_rgba(8,11,20,0.06)]">
+          <Card className="glass-card rounded-3xl">
             <CardHeader>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6B7280]">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
                 {isLoading ? 'Loading registry' : 'Available models'}
               </p>
-              <CardTitle>Model registry</CardTitle>
+              <CardTitle className="text-white">Model registry</CardTitle>
             </CardHeader>
             <CardContent>
               {data.models.length > 0 ? (
@@ -357,33 +354,33 @@ export function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl border-[#E3DACC] bg-[#FFFCF6] shadow-[0_10px_30px_rgba(8,11,20,0.06)]">
+          <Card className="glass-card rounded-3xl">
             <CardHeader>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6B7280]">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
                 {isLoading ? 'Loading history' : 'Recent work'}
               </p>
-              <CardTitle>Playground sessions</CardTitle>
+              <CardTitle className="text-white">Playground sessions</CardTitle>
             </CardHeader>
             <CardContent>
               {data.sessions.length > 0 ? (
                 <div className="space-y-2">
                   {data.sessions.map((session) => (
                     <button
-                      className="group flex w-full items-center justify-between rounded-2xl border border-[#E3DACC] bg-[#FFFCF6] px-4 py-3 text-left transition-all duration-150 hover:border-[#CDBFAE] hover:bg-[#FFFDF8] hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(8,11,20,0.06)]"
+                      className="glass-surface glass-surface-hover group flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left"
                       key={session.id}
                       onClick={() => navigate(`/playground/${session.id}`)}
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="text-[15px] font-medium text-[#080B14]">{session.title}</p>
-                        <p className="mt-0.5 text-xs text-[#6B7280]">
+                        <p className="text-[15px] font-medium text-white">{session.title}</p>
+                        <p className="mt-0.5 text-xs text-white/40">
                           Created {formatDate(session.created_at)}
                         </p>
                       </div>
                       <div className="ml-3 flex shrink-0 items-center gap-2">
-                        <span className="font-mono text-[11px] text-[#9CA3AF] transition-colors group-hover:text-[#6B7280]">
+                        <span className="font-mono text-[11px] text-white/25 transition-colors group-hover:text-white/40">
                           {session.id}
                         </span>
-                        <ArrowUpRight className="size-4 text-[#CDBFAE] transition-all group-hover:text-[#047857] group-hover:-translate-y-px group-hover:translate-x-px" />
+                        <ArrowUpRight className="size-4 text-white/20 transition-all group-hover:text-[#5EF2C1] group-hover:-translate-y-px group-hover:translate-x-px" />
                       </div>
                     </button>
                   ))}
@@ -431,18 +428,18 @@ function StatRow({
   highlight?: boolean
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-[#E3DACC] bg-[#FFFCF6] px-4 py-3 shadow-[0_10px_30px_rgba(8,11,20,0.06)]">
-      <div className="grid size-9 place-items-center rounded-[14px] bg-[#F1EADF] text-[#111827]">
+    <div className="glass-surface flex items-center gap-3 rounded-2xl px-4 py-3">
+      <div className="grid size-9 place-items-center rounded-[14px] bg-white/8 text-white/70">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-[#6B7280]">{label}</p>
+        <p className="text-xs font-medium text-white/50">{label}</p>
         {highlight && valueText ? (
           <span className="mt-0.5 inline-flex items-center rounded-full border border-[#B8F3DC] bg-[#E8FFF6] px-2.5 py-0.5 text-sm font-semibold text-[#047857]">
             {valueText}
           </span>
         ) : (
-          <p className="text-lg font-semibold tracking-tight text-[#080B14]">
+          <p className="text-lg font-semibold tracking-tight text-white">
             {valueText ?? (value != null ? String(value) : '—')}
           </p>
         )}
@@ -463,7 +460,7 @@ function ModelCard({
   return (
     <button
       type="button"
-      className="group flex w-full items-center gap-3 rounded-2xl border border-[#E3DACC] bg-[#FFFCF6] px-4 py-3 text-left transition-all duration-150 hover:border-[#CDBFAE] hover:bg-[#FFFDF8] hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(8,11,20,0.06)]"
+      className="glass-surface glass-surface-hover group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left"
       onClick={onClick}
     >
       {/* Provider initial */}
@@ -478,8 +475,8 @@ function ModelCard({
 
       {/* Name + slug */}
       <div className="min-w-0 flex-1">
-        <p className="text-[15px] font-medium text-[#080B14]">{model.display_name}</p>
-        <p className="mt-0.5 font-mono text-xs text-[#6B7280] truncate">
+        <p className="text-[15px] font-medium text-white">{model.display_name}</p>
+        <p className="mt-0.5 font-mono text-xs text-white/40 truncate">
           {model.provider}/{model.model_name}
         </p>
       </div>
@@ -516,12 +513,12 @@ function getModelCapabilities(model: Model): Capability[] {
   if (model.provider === 'openrouter') {
     caps.push({
       label: 'OpenRouter',
-      className: 'bg-[#F8F3EA] text-[#4B5563] ring-1 ring-[#E3DACC]',
+      className: 'bg-white/8 text-white/60 ring-1 ring-white/10',
     })
   } else if (model.provider === 'openai') {
     caps.push({
       label: 'OpenAI',
-      className: 'bg-[#F8F3EA] text-[#4B5563] ring-1 ring-[#E3DACC]',
+      className: 'bg-white/8 text-white/60 ring-1 ring-white/10',
     })
   }
 
@@ -538,13 +535,13 @@ function getModelCapabilities(model: Model): Capability[] {
   if (name.includes('nano')) {
     caps.push({
       label: 'Nano',
-      className: 'bg-[#F8F3EA] text-[#4B5563] ring-1 ring-[#E3DACC]',
+      className: 'bg-white/8 text-white/60 ring-1 ring-white/10',
       icon: Zap,
     })
   } else if (name.includes('mini')) {
     caps.push({
       label: 'Fast',
-      className: 'bg-[#F8F3EA] text-[#4B5563] ring-1 ring-[#E3DACC]',
+      className: 'bg-white/8 text-white/60 ring-1 ring-white/10',
       icon: Zap,
     })
   }
@@ -583,16 +580,16 @@ function EmptyState({
   action?: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#E3DACC] bg-[#FFFCF6] px-5 text-center">
+    <div className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/10 bg-white/3 px-5 text-center">
       {isLoading ? (
-        <p className="text-sm font-medium text-[#6B7280]">{loadingText}</p>
+        <p className="text-sm font-medium text-white/50">{loadingText}</p>
       ) : (
         <>
-          {Icon && <Icon className="size-8 text-[#CDBFAE]" />}
+          {Icon && <Icon className="size-8 text-white/20" />}
           <div>
-            <p className="text-sm font-medium text-[#6B7280]">{text}</p>
+            <p className="text-sm font-medium text-white/50">{text}</p>
             {description && (
-              <p className="mt-1 text-xs text-[#9CA3AF]">{description}</p>
+              <p className="mt-1 text-xs text-white/30">{description}</p>
             )}
           </div>
           {action}

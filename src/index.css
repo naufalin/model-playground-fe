@@ -369,6 +369,24 @@ input {
   outline: none;
 }
 
+/* ── Liquid glass — inline surfaces (dark variant) ──────────────────── */
+
+.glass-surface {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-surface-hover {
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.glass-surface-hover:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
 /* ── Dark code block overrides ─────────────────────────────────────────── */
 
 /* Target the <code> element (which has language-*) and bare .hljs spans */
