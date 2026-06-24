@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
+import { VisualizationIframe } from '@/components/VisualizationIframe'
 import type { Message } from '@/lib/api'
 import type {
   StreamTimelineEvent,
@@ -41,6 +42,7 @@ type ToolRun = {
   status: 'running' | 'done'
   args?: unknown
   outputPreview?: string | null
+  vizHtml?: string | null
 }
 
 export function ThreadPanel({
@@ -678,35 +680,44 @@ function ToolActivity({
 
       {expanded && (
         <div className="mt-2 space-y-2">
-          {runs.map((run, index) => (
-            <div
-              key={`${run.id}-${index}`}
-              className="rounded-lg border border-[#FDE68A] bg-[#FFFCF6] px-2.5 py-2"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  {run.status === 'running' ? (
-                    <CircleDashed className="size-3.5 shrink-0 animate-spin text-amber-600" />
-                  ) : (
-                    <CheckCircle2 className="size-3.5 shrink-0 text-[#047857]" />
-                  )}
-                  <span className="truncate font-mono text-[11px] text-[#374151]">
-                    {run.tool}
+          {runs.map((run, index) => {
+            const viz = extractVisualization(run)
+            return (
+              <div
+                key={`${run.id}-${index}`}
+                className="rounded-lg border border-[#FDE68A] bg-[#FFFCF6] px-2.5 py-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    {run.status === 'running' ? (
+                      <CircleDashed className="size-3.5 shrink-0 animate-spin text-amber-600" />
+                    ) : (
+                      <CheckCircle2 className="size-3.5 shrink-0 text-[#047857]" />
+                    )}
+                    <span className="truncate font-mono text-[11px] text-[#374151]">
+                      {run.tool}
+                    </span>
+                  </div>
+                  <span className="shrink-0 text-[10px] uppercase tracking-wide text-[#9CA3AF]">
+                    {run.status}
                   </span>
                 </div>
-                <span className="shrink-0 text-[10px] uppercase tracking-wide text-[#9CA3AF]">
-                  {run.status}
-                </span>
-              </div>
 
-              {run.args !== undefined && (
-                <ToolDetail label="input" value={run.args} />
-              )}
-              {run.outputPreview && (
-                <ToolDetail label="output" value={run.outputPreview} />
-              )}
-            </div>
-          ))}
+                {run.args !== undefined && !viz && (
+                  <ToolDetail label="input" value={run.args} />
+                )}
+                {viz ? (
+                  <div className="mt-2">
+                    <VisualizationIframe html={viz.html} title={viz.title} />
+                  </div>
+                ) : (
+                  run.outputPreview && (
+                    <ToolDetail label="output" value={run.outputPreview} />
+                  )
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -752,6 +763,7 @@ function toolRunsFromEvents(events: ToolEvent[]): ToolRun[] {
       tool: event.tool,
       status: 'done',
       outputPreview: cleanPreview(event.outputPreview),
+      vizHtml: event.vizHtml ?? existing.vizHtml,
     })
   })
 
@@ -779,6 +791,7 @@ function toolRunsFromMessages(messages: Message[]): ToolRun[] {
       status: isDone ? 'done' : existing.status,
       args: message.tool_input ?? existing.args,
       outputPreview: cleanPreview(message.output_preview) ?? existing.outputPreview,
+      vizHtml: extractVizFromContent(message) ?? existing.vizHtml,
     })
   })
 
@@ -813,6 +826,38 @@ function formatValue(value: unknown) {
   } catch {
     return String(value)
   }
+}
+
+function extractVisualization(
+  run: ToolRun,
+): { html: string; title?: string } | null {
+  if (!run.vizHtml) return null
+  try {
+    const output = JSON.parse(run.vizHtml)
+    if (output && typeof output.html === 'string') {
+      return { html: output.html, title: output.title }
+    }
+  } catch {
+    // vizHtml might be raw HTML
+    if (run.vizHtml.trim().startsWith('<')) {
+      return { html: run.vizHtml }
+    }
+  }
+  return null
+}
+
+function extractVizFromContent(message: Message): string | null {
+  if (message.role !== 'tool' || message.tool_name !== 'generate_visualization')
+    return null
+  try {
+    const output = JSON.parse(message.content)
+    if (output && typeof output.html === 'string') {
+      return message.content
+    }
+  } catch {
+    // not JSON
+  }
+  return null
 }
 
 // -- Usage -------------------------------------------------------------------

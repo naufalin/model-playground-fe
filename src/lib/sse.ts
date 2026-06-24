@@ -7,7 +7,7 @@ export type SSEEvent =
   | { type: 'text_delta'; thread_id: string; delta: string }
   | { type: 'thinking_delta'; thread_id: string; delta: string; kind?: string }
   | { type: 'tool_start'; thread_id: string; tool: string; call_id: string; args: unknown }
-  | { type: 'tool_end'; thread_id: string; tool: string; call_id: string; output_preview?: string | null }
+  | { type: 'tool_end'; thread_id: string; tool: string; call_id: string; output_preview?: string | null; viz_html?: string | null }
   | { type: 'thread_done'; thread_id: string; latency_ms: number; content: string; provider: string; model: string; usage: Record<string, unknown> | null; thinking: Record<string, unknown> | null; output_delta_count: number | null }
   | { type: 'error'; thread_id: string; error: string }
   | { type: 'all_done' }

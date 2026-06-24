@@ -15,6 +15,7 @@ export type ToolEvent = {
   callId: string
   args?: unknown
   outputPreview?: string | null
+  vizHtml?: string | null
 }
 
 export type StreamTimelineEvent =
@@ -435,6 +436,7 @@ function processEvent(event: SSEEvent, dispatch: (action: Action) => void) {
           tool: event.tool,
           callId: event.call_id,
           outputPreview: event.output_preview ?? null,
+          vizHtml: event.viz_html ?? null,
         },
       })
       break
