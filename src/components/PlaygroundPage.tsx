@@ -234,13 +234,13 @@ export function PlaygroundPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <main className="flex h-screen flex-col bg-[#F4EFE6] text-[#080B14]">
+    <main className="glass-mesh-bg flex h-screen flex-col bg-[#080B14] text-white">
       {/* ── Header ────────────────────────────────────────────────────── */}
-      <header className="shrink-0 border-b border-[#E3DACC] bg-[#F4EFE6]/80 backdrop-blur-xl">
+      <header className="shrink-0 border-b border-white/10 bg-[#080B14]/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-5 py-3">
           <div className="flex min-w-0 items-center gap-3">
             <button
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-[#080B14] text-sm font-black text-white shadow-sm shadow-[#080B14]/20"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-white text-sm font-black text-[#080B14] shadow-sm"
               onClick={() => navigate('/')}
             >
               MP
@@ -254,7 +254,7 @@ export function PlaygroundPage() {
                     onChange={(e) => setEditTitle(e.target.value)}
                     onBlur={handleRename}
                     disabled={isSaving}
-                    className="h-8 w-64 rounded-lg border-[#E3DACC] bg-[#FFFCF6] text-sm font-semibold focus-visible:border-[#5EF2C1] focus-visible:ring-[#5EF2C1]/30"
+                    className="glass-input h-8 w-64 rounded-lg text-sm font-semibold text-white"
                     maxLength={255}
                   />
                 </form>
@@ -264,15 +264,15 @@ export function PlaygroundPage() {
                   onDoubleClick={startRename}
                   title="Double-click to rename"
                 >
-                  <p className="truncate text-base font-semibold">
+                  <p className="truncate text-base font-semibold text-white">
                     {isLoading ? 'Loading...' : detail?.title ?? 'Playground'}
                   </p>
                   {!isLoading && detail && (
-                    <Pencil className="hidden size-3 text-[#9CA3AF] group-hover:inline" />
+                    <Pencil className="hidden size-3 text-white/30 group-hover:inline" />
                   )}
                 </button>
               )}
-              <p className="font-mono text-xs text-[#9CA3AF]">{id}</p>
+              <p className="font-mono text-xs text-white/30">{id}</p>
             </div>
           </div>
 
@@ -284,7 +284,7 @@ export function PlaygroundPage() {
                   size="sm"
                   onClick={handleNewPlayground}
                   disabled={isCreating}
-                  className="gap-1.5 text-[#6B7280] hover:bg-[#F8F3EA] hover:text-[#080B14]"
+                  className="gap-1.5 text-white/60 hover:bg-white/10 hover:text-white"
                 >
                   <Plus className="size-3.5" />
                   <span className="hidden sm:inline">New</span>
@@ -293,7 +293,7 @@ export function PlaygroundPage() {
                   variant="ghost"
                   size="sm"
                   onClick={startRename}
-                  className="gap-1.5 text-[#6B7280] hover:bg-[#F8F3EA] hover:text-[#080B14]"
+                  className="gap-1.5 text-white/60 hover:bg-white/10 hover:text-white"
                 >
                   <Pencil className="size-3.5" />
                   <span className="hidden sm:inline">Rename</span>
@@ -301,25 +301,23 @@ export function PlaygroundPage() {
                 <Dialog>
                   <DialogTrigger
                     render={
-                      <Button variant="ghost" size="sm" className="gap-1.5 text-[#6B7280] hover:bg-[#FEF2F2] hover:text-[#EF4444]" />
+                      <Button variant="ghost" size="sm" className="gap-1.5 text-white/60 hover:bg-red-500/10 hover:text-red-400" />
                     }
                   >
                     <Trash2 className="size-3.5" />
                     <span className="hidden sm:inline">Delete</span>
                   </DialogTrigger>
-                  <DialogContent className="rounded-2xl border-[#E3DACC] bg-[#FFFCF6]">
+                  <DialogContent className="glass-card rounded-2xl">
                     <DialogHeader>
-                      <DialogTitle>Delete playground?</DialogTitle>
-                      <DialogDescription>
+                      <DialogTitle className="text-white">Delete playground?</DialogTitle>
+                      <DialogDescription className="text-white/60">
                         This will permanently delete{' '}
                         <strong>{detail.title}</strong> and all its threads and
                         messages. This cannot be undone.
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                      <DialogClose render={<Button variant="outline" className="rounded-xl border-[#E3DACC] bg-[#FFFCF6] hover:bg-[#F8F3EA]" />}>
-                        Cancel
-                      </DialogClose>
+                      <DialogClose render={<Button variant="outline" className="rounded-xl border-white/12 bg-white/8 text-white/70 hover:bg-white/12 hover:text-white" />} />
                       <Button
                         variant="destructive"
                         disabled={isDeleting}
@@ -333,16 +331,16 @@ export function PlaygroundPage() {
                 </Dialog>
               </>
             )}
-            <div className="mx-2 hidden h-6 w-px bg-[#E3DACC] sm:block" />
+            <div className="mx-2 hidden h-6 w-px bg-white/10 sm:block" />
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium">{displayName}</p>
-              <p className="text-xs text-[#6B7280]">{user.email}</p>
+              <p className="text-sm font-medium text-white/70">{displayName}</p>
+              <p className="text-xs text-white/40">{user.email}</p>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onLogout}
-              className="rounded-full border border-[#E3DACC] bg-[#FFFCF6] px-3.5 text-xs font-medium text-[#6B7280] hover:bg-[#F8F3EA] hover:text-[#080B14]"
+              className="rounded-full border border-white/12 bg-white/8 px-3.5 text-xs font-medium text-white/60 hover:bg-white/12 hover:text-white"
             >
               Logout
             </Button>
@@ -361,21 +359,21 @@ export function PlaygroundPage() {
       <div className="flex min-h-0 flex-1 flex-col">
         {isLoading ? (
           <div className="flex flex-1 items-center justify-center">
-            <p className="text-sm text-[#6B7280]">Loading playground...</p>
+            <p className="text-sm text-white/40">Loading playground...</p>
           </div>
         ) : !hasThreads && !hasStreamThreads ? (
           /* ── Welcome state: no threads yet ── */
           <div className="flex flex-1 items-center justify-center px-5">
             <div className="w-full max-w-xl space-y-6 text-center">
-              <MessageSquarePlus className="mx-auto size-12 text-[#CDBFAE]" />
+              <MessageSquarePlus className="mx-auto size-12 text-white/20" />
               <div>
-                <h2 className="text-xl font-semibold text-[#080B14]">Start comparing models</h2>
-                <p className="mt-2 text-sm text-[#6B7280]">
+                <h2 className="text-xl font-semibold text-white">Start comparing models</h2>
+                <p className="mt-2 text-sm text-white/45">
                   Select two or more models below, type a prompt, and see their
                   responses side by side.
                 </p>
               </div>
-              <div className="rounded-2xl border border-[#E3DACC] bg-[#FFFCF6] p-5 text-left shadow-[0_10px_30px_rgba(8,11,20,0.06)]">
+              <div className="glass-card rounded-2xl p-5 text-left">
                 <ModelSelector
                   models={models}
                   selected={selectedModels}
@@ -416,12 +414,12 @@ export function PlaygroundPage() {
           <div className="flex min-h-0 flex-1 flex-col">
             {/* Prompt context bar */}
             {contextPrompt && (
-              <div className="shrink-0 border-b border-[#E3DACC] bg-[#FFFCF6] px-5 py-2.5">
+              <div className="shrink-0 border-b border-white/8 bg-white/3 px-5 py-2.5">
                 <div className="mx-auto max-w-[1600px]">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6B7280]">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
                     Comparing
                   </p>
-                  <p className="mt-0.5 truncate text-sm text-[#080B14]">
+                  <p className="mt-0.5 truncate text-sm text-white/80">
                     {contextPrompt}
                   </p>
                 </div>
@@ -429,6 +427,7 @@ export function PlaygroundPage() {
             )}
 
             {/* Thread panels */}
+
             <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden px-4 py-4 sm:px-5">
               <div
                 className="grid h-full min-w-fit gap-4"

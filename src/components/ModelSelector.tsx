@@ -59,7 +59,7 @@ export function ModelSelector({ models, selected, onChange, disabled }: Props) {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6B7280]">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/40">
         Select models to compare
       </p>
       <div className="flex flex-wrap gap-2">
@@ -78,8 +78,8 @@ export function ModelSelector({ models, selected, onChange, disabled }: Props) {
                 className={cn(
                   'gap-1.5 rounded-xl',
                   active
-                    ? 'bg-[#080B14] text-white hover:bg-[#111827]'
-                    : 'border-[#E3DACC] bg-[#FFFCF6] text-[#080B14] hover:bg-[#F8F3EA]',
+                    ? 'bg-white/15 text-white border border-white/20 hover:bg-white/20'
+                    : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10',
                 )}
               >
                 {model.display_name}
@@ -94,7 +94,7 @@ export function ModelSelector({ models, selected, onChange, disabled }: Props) {
               </Button>
               {active && model.supports_reasoning && sel && (
                 <select
-                  className="h-7 rounded-lg border border-[#E3DACC] bg-[#FFFCF6] px-1.5 text-xs font-medium text-[#4B5563]"
+                  className="h-7 rounded-lg border border-white/10 bg-white/8 px-1.5 text-xs font-medium text-white/60"
                   value={sel.reasoning_effort ?? 'medium'}
                   onChange={(e) =>
                     setReasoningEffort(

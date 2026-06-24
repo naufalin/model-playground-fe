@@ -121,9 +121,9 @@ export function ThreadPanel({
   }
 
   return (
-    <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-[22px] border border-[#DCD2C3] bg-[#FFFCF6] shadow-[0_16px_50px_rgba(8,11,20,0.08)]">
+    <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-[22px] border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
       {/* ── Dark model header ─────────────────────────────────────────── */}
-      <div className="shrink-0 bg-[#080B14] px-4 py-3.5">
+      <div className="shrink-0 bg-[#080B14] border-b border-white/8 px-4 py-3.5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-2.5">
             <div className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-white/10 text-[#5EF2C1]">
@@ -157,10 +157,10 @@ export function ThreadPanel({
 
             {streamState.text && (
               <AssistantFrame>
-                <div className="rounded-2xl border border-[#E3DACC] bg-[#FFFCF6] px-4 py-3 text-sm leading-relaxed shadow-sm shadow-[#080B14]/5">
+                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm leading-relaxed">
                   <MarkdownRenderer content={streamState.text} />
                   {isStreaming && (
-                    <span className="ml-1 inline-block size-1.5 animate-pulse rounded-full bg-[#9CA3AF]" />
+                    <span className="ml-1 inline-block size-1.5 animate-pulse rounded-full bg-white/40" />
                   )}
                 </div>
               </AssistantFrame>
@@ -175,7 +175,7 @@ export function ThreadPanel({
         )}
 
         {messages.length === 0 && !showStreamOverlay && (
-          <div className="flex h-32 items-center justify-center text-xs text-[#9CA3AF]">
+          <div className="flex h-32 items-center justify-center text-xs text-white/25">
             No messages yet
           </div>
         )}
@@ -183,15 +183,15 @@ export function ThreadPanel({
 
       {/* ── Usage footer ──────────────────────────────────────────────── */}
       {footerUsage && (
-        <div className="shrink-0 border-t border-[#F1EADF] bg-[#F8F3EA]/70 px-4 py-2">
+        <div className="shrink-0 border-t border-white/8 bg-white/3 px-4 py-2">
           <UsageBar usage={footerUsage.usage} latencyMs={footerUsage.latencyMs} />
         </div>
       )}
 
       {/* ── Per-thread chat input ─────────────────────────────────────── */}
       {showInput && (
-        <div className="shrink-0 border-t border-[#E3DACC] bg-[#FFFCF6] px-3 py-2.5">
-          <div className="flex items-end gap-2 rounded-xl border border-[#E3DACC] bg-[#F8F3EA] p-1.5">
+        <div className="shrink-0 border-t border-white/8 bg-white/3 px-3 py-2.5">
+          <div className="flex items-end gap-2 rounded-xl border border-white/10 bg-white/5 p-1.5">
             <Textarea
               ref={textareaRef}
               value={inputValue}
@@ -200,14 +200,14 @@ export function ThreadPanel({
               disabled={disabled}
               placeholder={disabled ? 'Streaming...' : 'Continue...'}
               rows={1}
-              className="min-h-8 max-h-[120px] resize-none border-0 bg-transparent px-2 py-1.5 text-sm shadow-none focus-visible:ring-0"
+              className="min-h-8 max-h-[120px] resize-none border-0 bg-transparent px-2 py-1.5 text-sm shadow-none focus-visible:ring-0 text-white placeholder:text-white/30"
             />
             <Button
               type="button"
               size="icon"
               disabled={disabled || !inputValue.trim()}
               onClick={handleSend}
-              className="size-8 shrink-0 rounded-lg bg-[#080B14] text-white hover:bg-[#111827]"
+              className="size-8 shrink-0 rounded-lg bg-white/15 text-white hover:bg-white/20"
             >
               <Send className="size-3.5" />
             </Button>
@@ -262,7 +262,7 @@ function MetricBadge({
           <span
             role="tooltip"
             className={cn(
-              'pointer-events-none absolute right-0 top-full z-20 mt-1 w-48 whitespace-normal break-words rounded-xl border border-[#E3DACC] bg-[#FFFCF6] px-2.5 py-2 text-left text-[11px] font-normal leading-snug text-[#4B5563] shadow-lg shadow-[#080B14]/10',
+              'pointer-events-none absolute right-0 top-full z-20 mt-1 w-48 whitespace-normal break-words rounded-xl border border-white/12 bg-white/10 backdrop-blur-xl px-2.5 py-2 text-left text-[11px] font-normal leading-snug text-white/70 shadow-lg shadow-black/20',
               showTip ? 'block' : 'hidden',
             )}
           >
@@ -475,7 +475,7 @@ function MessageBubble({
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-[18px] bg-[#080B14] px-3.5 py-2.5 text-sm text-white shadow-sm shadow-[#080B14]/10">
+        <div className="max-w-[85%] rounded-[18px] bg-white/8 border border-white/12 px-3.5 py-2.5 text-sm text-white">
           <span className="whitespace-pre-wrap">{message.content}</span>
         </div>
       </div>
@@ -505,11 +505,11 @@ function MessageBubble({
           />
         )}
 
-        <div className="rounded-[18px] border border-[#E3DACC] bg-[#FFFCF6] px-4 py-3 text-sm leading-relaxed shadow-sm shadow-[#080B14]/5">
+        <div className="rounded-[18px] border border-white/10 bg-white/5 px-4 py-3 text-sm leading-relaxed text-white">
           <MarkdownRenderer content={message.content} />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 px-1 text-[11px] text-[#9CA3AF]">
+        <div className="flex flex-wrap items-center gap-2 px-1 text-[11px] text-white/30">
           {message.model && <span>{message.model}</span>}
           {message.latency_ms != null && <span>{message.latency_ms}ms</span>}
           {message.usage &&
@@ -526,7 +526,7 @@ function MessageBubble({
 function AssistantFrame({ children }: { children: ReactNode }) {
   return (
     <div className="flex gap-2.5">
-      <div className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-[#080B14] text-[10px] font-bold text-white">
+      <div className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-white/10 text-[10px] font-bold text-white/70">
         AI
       </div>
       <div className="min-w-0 flex-1">{children}</div>
@@ -588,28 +588,28 @@ function ThinkingPanel({
   )
 
   return (
-    <div className="rounded-xl border border-[#DDD6FE] bg-[#F3EDFF] px-3 py-2">
+    <div className="rounded-xl border border-violet-500/20 bg-violet-500/8 px-3 py-2">
       <button
         type="button"
         className="flex w-full items-center justify-between gap-3 text-left"
         onClick={() => setExpanded((prev) => !prev)}
       >
-        <span className="flex min-w-0 items-center gap-2 text-xs font-medium text-[#6D28D9]">
+        <span className="flex min-w-0 items-center gap-2 text-xs font-medium text-violet-300">
           <Sparkles className="size-3.5 shrink-0" />
           <span className={cn(isLive && !expanded && 'text-shimmer')}>
             {liveLabel}
           </span>
         </span>
         {expanded ? (
-          <ChevronUp className="size-3.5 shrink-0 text-violet-500" />
+          <ChevronUp className="size-3.5 shrink-0 text-violet-400" />
         ) : (
-          <ChevronDown className="size-3.5 shrink-0 text-violet-500" />
+          <ChevronDown className="size-3.5 shrink-0 text-violet-400" />
         )}
       </button>
       {expanded && (
         <pre
           className={cn(
-            'mt-2 max-h-60 overflow-auto whitespace-pre-wrap rounded-lg bg-white/70 px-2.5 py-2 text-xs leading-relaxed text-violet-900',
+            'mt-2 max-h-60 overflow-auto whitespace-pre-wrap rounded-lg bg-white/5 px-2.5 py-2 text-xs leading-relaxed text-violet-200',
             isLive && 'text-shimmer',
           )}
         >
@@ -641,14 +641,14 @@ function ToolActivity({
     : `${completedCount} completed`
 
   return (
-    <div className="rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 shadow-sm shadow-amber-950/5">
+    <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2">
       <button
         type="button"
         className="flex w-full items-center justify-between gap-3 text-left"
         onClick={() => setExpanded((prev) => !prev)}
       >
         <span className="flex min-w-0 items-center gap-2">
-          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-white text-amber-700 ring-1 ring-[#FDE68A]">
+          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/8 text-amber-400 ring-1 ring-amber-500/20">
             {hasActive ? (
               <Loader2 className="size-3.5 animate-spin" />
             ) : (
@@ -658,7 +658,7 @@ function ToolActivity({
           <span className="min-w-0">
             <span
               className={cn(
-                'block text-xs font-semibold text-amber-900',
+                'block text-xs font-semibold text-amber-200',
                 isLive &&
                   hasActive &&
                   'text-shimmer [--shimmer-base:#92400e] [--shimmer-highlight:#fef3c7] [--shimmer-mid:#ea580c]',
@@ -666,15 +666,15 @@ function ToolActivity({
             >
               {hasActive ? 'Using tools' : 'Tools'}
             </span>
-            <span className="block truncate text-[11px] text-amber-700/80">
+            <span className="block truncate text-[11px] text-amber-300/70">
               {toolSummary} · {statusText}
             </span>
           </span>
         </span>
         {expanded ? (
-          <ChevronUp className="size-3.5 shrink-0 text-amber-700" />
+          <ChevronUp className="size-3.5 shrink-0 text-amber-400" />
         ) : (
-          <ChevronDown className="size-3.5 shrink-0 text-amber-700" />
+          <ChevronDown className="size-3.5 shrink-0 text-amber-400" />
         )}
       </button>
 
@@ -685,20 +685,20 @@ function ToolActivity({
             return (
               <div
                 key={`${run.id}-${index}`}
-                className="rounded-lg border border-[#FDE68A] bg-[#FFFCF6] px-2.5 py-2"
+                className="rounded-lg border border-amber-500/15 bg-white/5 px-2.5 py-2"
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
                     {run.status === 'running' ? (
-                      <CircleDashed className="size-3.5 shrink-0 animate-spin text-amber-600" />
+                      <CircleDashed className="size-3.5 shrink-0 animate-spin text-amber-400" />
                     ) : (
                       <CheckCircle2 className="size-3.5 shrink-0 text-[#047857]" />
                     )}
-                    <span className="truncate font-mono text-[11px] text-[#374151]">
+                    <span className="truncate font-mono text-[11px] text-white/60">
                       {run.tool}
                     </span>
                   </div>
-                  <span className="shrink-0 text-[10px] uppercase tracking-wide text-[#9CA3AF]">
+                  <span className="shrink-0 text-[10px] uppercase tracking-wide text-white/30">
                     {run.status}
                   </span>
                 </div>
@@ -726,11 +726,11 @@ function ToolActivity({
 
 function ToolDetail({ label, value }: { label: string; value: unknown }) {
   return (
-    <div className="mt-2 rounded-lg bg-[#F8F3EA] px-2 py-1.5">
-      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-[#9CA3AF]">
+    <div className="mt-2 rounded-lg bg-white/5 px-2 py-1.5">
+      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-white/30">
         {label}
       </p>
-      <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-[#4B5563]">
+      <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-white/50">
         {formatValue(value)}
       </pre>
     </div>
@@ -876,7 +876,7 @@ function UsageBar({
   if (!input && !output && !total && latencyMs == null) return null
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#6B7280]">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-white/40">
       {input != null && <span>Input {formatNumber(Number(input))}</span>}
       {output != null && <span>Output {formatNumber(Number(output))}</span>}
       {total != null && <span>Total {formatNumber(Number(total))}</span>}
