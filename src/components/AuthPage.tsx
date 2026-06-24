@@ -90,130 +90,124 @@ export function AuthPage({
   }
 
   return (
-    <main className="min-h-screen bg-[#F4EFE6] text-[#080B14]">
-      <div className="grid min-h-screen lg:grid-cols-[1fr_520px]">
-        {/* ── Left: dark cinematic panel ─────────────────────────────── */}
-        <section className="relative flex min-h-[44vh] flex-col justify-between overflow-hidden bg-[#080B14] px-6 py-8 text-white sm:px-10 lg:min-h-screen">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(94,242,193,0.22),transparent 28%),linear-gradient(135deg,rgba(8,11,20,0.85),rgba(8,11,20,0.98))]" />
-          <div className="absolute inset-x-0 bottom-0 h-48 bg-[linear-gradient(to_top,rgba(244,239,230,0.14),transparent)]" />
+    <main className="glass-mesh-bg h-screen overflow-hidden bg-[#080B14] text-white">
+      {/* ── Top bar ──────────────────────────────────────────────────── */}
+      <header className="relative z-10 flex items-center justify-between px-6 py-3.5 sm:px-10">
+        <div className="flex items-center gap-3">
+          <div className="grid h-9 w-9 place-items-center rounded-lg bg-white text-xs font-black text-[#080B14]">
+            MP
+          </div>
+          <span className="text-sm font-semibold text-white/80">
+            Model Playground
+          </span>
+        </div>
+        <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-medium text-white/40">
+          Local lab
+        </span>
+      </header>
 
-          <div className="relative z-10 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-lg bg-white text-sm font-black text-[#080B14]">
-                MP
-              </div>
-              <div>
-                <p className="text-sm font-semibold">Model Playground</p>
-                <p className="text-xs text-slate-400">Compare LLMs with focus</p>
-              </div>
-            </div>
-            <span className="rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-slate-300">
-              Local lab
+      {/* ── Centered content ─────────────────────────────────────────── */}
+      <div className="relative z-10 flex h-[calc(100vh-56px)] flex-col items-center justify-center px-6 sm:px-10">
+        {/* Hero text */}
+        <div className="mb-6 text-center">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#5EF2C1]">
+            Side-by-side model testing
+          </p>
+          <h1 className="mx-auto max-w-xl text-[2rem] font-bold leading-[1.08] text-white sm:text-[2.6rem]">
+            A calmer desk for sharper model decisions.
+          </h1>
+          <p className="mx-auto mt-2.5 max-w-md text-sm leading-6 text-white/40">
+            Compare LLMs side-by-side. Track latency, cost, quality, and
+            reasoning.
+          </p>
+        </div>
+
+        {/* Glass card */}
+        <div className="glass-card w-full max-w-md rounded-3xl p-8">
+          <div className="mb-6">
+            <p className="text-sm font-medium text-white/50">
+              Welcome back
+            </p>
+            <h2 className="mt-1.5 text-xl font-semibold tracking-tight text-white">
+              {mode === 'login' ? 'Sign in to continue' : 'Create your account'}
+            </h2>
+          </div>
+
+          <Tabs
+            value={mode}
+            onValueChange={(v) => {
+              setMode(v as AuthMode)
+              setError(null)
+            }}
+          >
+            <TabsList className="glass-tabs w-full rounded-xl p-[3px]">
+              <TabsTrigger
+                value="login"
+                className="flex-1 rounded-lg text-sm text-white/60 data-active:bg-white/12 data-active:text-white data-active:shadow-sm"
+              >
+                Login
+              </TabsTrigger>
+              <TabsTrigger
+                value="signup"
+                className="flex-1 rounded-lg text-sm text-white/60 data-active:bg-white/12 data-active:text-white data-active:shadow-sm"
+              >
+                Signup
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="login">
+              <AuthForm
+                form={form}
+                mode="login"
+                error={error}
+                isSubmitting={isSubmitting}
+                onSubmit={handleSubmit}
+                onUpdate={updateForm}
+              />
+            </TabsContent>
+
+            <TabsContent value="signup">
+              <AuthForm
+                form={form}
+                mode="signup"
+                error={error}
+                isSubmitting={isSubmitting}
+                onSubmit={handleSubmit}
+                onUpdate={updateForm}
+              />
+            </TabsContent>
+          </Tabs>
+
+          <p className="mt-4 text-center text-xs text-white/25">
+            API: <span className="font-mono text-white/35">{API_BASE_URL}</span>
+          </p>
+        </div>
+
+        {/* Feature flow — compact, below card */}
+        <div className="mt-6 text-center">
+          <div className="flex items-center justify-center gap-2 text-sm text-white/35">
+            <span className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 font-medium text-white/60">
+              Model A
+            </span>
+            <span className="text-[#5EF2C1]">→</span>
+            <span className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 font-medium text-white/60">
+              Compare
+            </span>
+            <span className="text-[#5EF2C1]">→</span>
+            <span className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 font-medium text-white/60">
+              Model B
             </span>
           </div>
-
-          <div className="relative z-10 max-w-2xl py-12 lg:py-0">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#5EF2C1]">
-              Side-by-side model testing
-            </p>
-            <h1 className="max-w-xl text-[2.8rem] font-bold leading-[1.05] text-white sm:text-[3.5rem]">
-              A calmer desk for sharper model decisions.
-            </h1>
-            <p className="mt-5 max-w-lg text-[15px] leading-7 text-slate-400">
-              Sign in to review available models, reopen recent playgrounds, and
-              keep experiments organized before the chat workspace arrives.
-            </p>
+          <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-white/25">
+            <span>Latency</span>
+            <span className="text-white/15">·</span>
+            <span>Cost</span>
+            <span className="text-white/15">·</span>
+            <span>Quality</span>
+            <span className="text-white/15">·</span>
+            <span>Reasoning</span>
           </div>
-
-          {/* Compact feature flow */}
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <span className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 font-medium text-slate-200">
-                Model A
-              </span>
-              <span className="text-[#5EF2C1]">→</span>
-              <span className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 font-medium text-slate-200">
-                Compare
-              </span>
-              <span className="text-[#5EF2C1]">→</span>
-              <span className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 font-medium text-slate-200">
-                Model B
-              </span>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-              <span>Latency</span>
-              <span className="text-white/20">·</span>
-              <span>Cost</span>
-              <span className="text-white/20">·</span>
-              <span>Quality</span>
-              <span className="text-white/20">·</span>
-              <span>Reasoning</span>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Right: sign-in card ────────────────────────────────────── */}
-        <section className="flex items-center justify-center px-6 py-10 sm:px-10">
-          <div className="w-full max-w-md rounded-3xl border border-[#E3DACC] bg-[#FFFCF6] p-10 shadow-[0_24px_70px_rgba(8,11,20,0.08)]">
-            <div className="mb-8">
-              <p className="text-sm font-medium text-[#6B7280]">
-                Welcome back
-              </p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#080B14]">
-                {mode === 'login' ? 'Sign in to continue' : 'Create your account'}
-              </h2>
-            </div>
-
-            <Tabs
-              value={mode}
-              onValueChange={(v) => {
-                setMode(v as AuthMode)
-                setError(null)
-              }}
-            >
-              <TabsList className="w-full rounded-xl border border-[#E3DACC] bg-[#F1EADF] p-[3px]">
-                <TabsTrigger
-                  value="login"
-                  className="flex-1 rounded-lg text-sm data-active:bg-[#FFFCF6] data-active:text-[#080B14] data-active:shadow-sm"
-                >
-                  Login
-                </TabsTrigger>
-                <TabsTrigger
-                  value="signup"
-                  className="flex-1 rounded-lg text-sm data-active:bg-[#FFFCF6] data-active:text-[#080B14] data-active:shadow-sm"
-                >
-                  Signup
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="login">
-                <AuthForm
-                  form={form}
-                  mode="login"
-                  error={error}
-                  isSubmitting={isSubmitting}
-                  onSubmit={handleSubmit}
-                  onUpdate={updateForm}
-                />
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <AuthForm
-                  form={form}
-                  mode="signup"
-                  error={error}
-                  isSubmitting={isSubmitting}
-                  onSubmit={handleSubmit}
-                  onUpdate={updateForm}
-                />
-              </TabsContent>
-            </Tabs>
-
-            <p className="mt-6 text-center text-xs text-[#9CA3AF]">
-              API: <span className="font-mono text-[#6B7280]">{API_BASE_URL}</span>
-            </p>
-          </div>
-        </section>
+        </div>
       </div>
     </main>
   )
@@ -238,13 +232,13 @@ function AuthForm({
     <form className="mt-4 space-y-4" onSubmit={onSubmit}>
       {mode === 'signup' ? (
         <label className="block">
-          <span className="text-sm font-medium text-[#111827]">
+          <span className="text-sm font-medium text-white/70">
             Display name
           </span>
           <Input
-            className="mt-2 h-12 rounded-xl border-[#E3DACC] bg-white text-[#080B14] placeholder:text-[#9CA3AF] focus-visible:border-[#5EF2C1] focus-visible:ring-[#5EF2C1]/30"
+            className="glass-input mt-2 h-12 rounded-xl"
             onChange={(event) => onUpdate('displayName', event.target.value)}
-            placeholder="Ada Lovelace"
+            placeholder="Joko Wee"
             type="text"
             value={form.displayName}
           />
@@ -252,22 +246,22 @@ function AuthForm({
       ) : null}
 
       <label className="block">
-        <span className="text-sm font-medium text-[#111827]">Email</span>
+        <span className="text-sm font-medium text-white/70">Email</span>
         <Input
           autoComplete="email"
-          className="mt-2 h-12 rounded-xl border-[#E3DACC] bg-white text-[#080B14] placeholder:text-[#9CA3AF] focus-visible:border-[#5EF2C1] focus-visible:ring-[#5EF2C1]/30"
+          className="glass-input mt-2 h-12 rounded-xl"
           onChange={(event) => onUpdate('email', event.target.value)}
-          placeholder="you@example.com"
+          placeholder="hidup@jokowee.com"
           type="email"
           value={form.email}
         />
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-[#111827]">Password</span>
+        <span className="text-sm font-medium text-white/70">Password</span>
         <Input
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-          className="mt-2 h-12 rounded-xl border-[#E3DACC] bg-white text-[#080B14] placeholder:text-[#9CA3AF] focus-visible:border-[#5EF2C1] focus-visible:ring-[#5EF2C1]/30"
+          className="glass-input mt-2 h-12 rounded-xl"
           onChange={(event) => onUpdate('password', event.target.value)}
           placeholder={
             mode === 'signup' ? 'At least 8 characters' : 'Your password'
@@ -284,7 +278,7 @@ function AuthForm({
       ) : null}
 
       <Button
-        className="h-[52px] w-full rounded-2xl bg-[#080B14] text-white shadow-[0_10px_30px_rgba(8,11,20,0.18)] transition-all duration-150 hover:bg-[#111827] hover:-translate-y-px"
+        className="h-[52px] w-full rounded-2xl bg-white/90 text-[#080B14] font-semibold shadow-[0_10px_30px_rgba(0,0,0,0.3)] transition-all duration-150 hover:bg-white hover:-translate-y-px"
         disabled={isSubmitting}
         type="submit"
       >

@@ -242,6 +242,133 @@ input {
   background: #B8B3A6;
 }
 
+/* ── Liquid glass — gradient mesh background (dark variant) ──────────── */
+
+.glass-mesh-bg {
+  position: relative;
+}
+
+.glass-mesh-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 800px 600px at 15% 25%, rgba(94, 242, 193, 0.55), transparent 50%),
+    radial-gradient(ellipse 600px 700px at 80% 20%, rgba(139, 92, 246, 0.50), transparent 45%),
+    radial-gradient(ellipse 700px 500px at 60% 80%, rgba(251, 191, 36, 0.35), transparent 45%),
+    radial-gradient(ellipse 500px 500px at 30% 70%, rgba(236, 72, 153, 0.30), transparent 45%),
+    radial-gradient(ellipse 900px 400px at 90% 60%, rgba(59, 130, 246, 0.35), transparent 45%),
+    radial-gradient(ellipse 550px 450px at 50% 15%, rgba(14, 165, 233, 0.30), transparent 45%),
+    radial-gradient(ellipse 480px 520px at 70% 45%, rgba(244, 114, 182, 0.25), transparent 40%);
+  background-size: 200% 200%;
+  animation: mesh-drift 20s ease-in-out infinite alternate;
+}
+
+@keyframes mesh-drift {
+  0%   { background-position: 0% 0%; }
+  25%  { background-position: 60% 20%; }
+  50%  { background-position: 30% 70%; }
+  75%  { background-position: 80% 40%; }
+  100% { background-position: 10% 90%; }
+}
+
+/* ── Liquid glass — card surface (dark variant) ─────────────────────── */
+
+.glass-card {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(40px) saturate(1.8);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 24px 80px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Prismatic edge refraction — vivid */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.40) 0%,
+    rgba(94, 242, 193, 0.35) 20%,
+    rgba(139, 92, 246, 0.30) 45%,
+    rgba(236, 72, 153, 0.25) 65%,
+    rgba(251, 191, 36, 0.20) 85%,
+    rgba(255, 255, 255, 0.15) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Liquid glass — inner elements (dark variant) ───────────────────── */
+
+.glass-tabs {
+  position: relative;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  overflow: hidden;
+}
+
+/* Shimmer sweep on the toggle bar */
+.glass-tabs::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.06) 45%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.06) 55%,
+    transparent 70%
+  );
+  background-size: 300% 100%;
+  animation: glass-shimmer 20s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes glass-shimmer {
+  0%   { background-position: 200% 0; }
+  50%  { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.glass-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.glass-input:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(94, 242, 193, 0.45);
+  box-shadow: 0 0 0 3px rgba(94, 242, 193, 0.12);
+  outline: none;
+}
+
 /* ── Dark code block overrides ─────────────────────────────────────────── */
 
 /* Target the <code> element (which has language-*) and bare .hljs spans */
