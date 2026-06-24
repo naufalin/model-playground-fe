@@ -221,7 +221,7 @@ input {
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #CDBFAE transparent;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
 }
 
 *::-webkit-scrollbar {
@@ -230,7 +230,7 @@ input {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #CDBFAE;
+  background: rgba(255,255,255,0.15);
   border-radius: 999px;
 }
 
@@ -239,7 +239,7 @@ input {
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: #B8B3A6;
+  background: rgba(255,255,255,0.25);
 }
 
 /* ── Liquid glass — gradient mesh background (dark variant) ──────────── */
