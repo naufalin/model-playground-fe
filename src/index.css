@@ -11,8 +11,8 @@
 }
 
 :root {
-  color: #020617;
-  background: #f7f3ea;
+  color: #080B14;
+  background: #F4EFE6;
   font-family:
     'IBM Plex Sans Variable', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
@@ -20,24 +20,41 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+
+  /* ── Unified palette ───────────────────────────────────────────────── */
+  --bg: #F4EFE6;
+  --surface: #FFFCF6;
+  --surface-soft: #F8F3EA;
+  --ink: #080B14;
+  --ink-soft: #111827;
+  --muted: #6B7280;
+  --border: #E3DACC;
+
+  --accent: #5EF2C1;
+  --accent-strong: #10B981;
+  --accent-dark: #047857;
+  --accent-wash: #E8FFF6;
+  --accent-border: #B8F3DC;
+
+  --danger: #EF4444;
+  --warning: #D97706;
+
+  /* ── shadcn tokens ─────────────────────────────────────────────────── */
+  --background: #F4EFE6;
+  --foreground: #080B14;
+  --card: #FFFCF6;
+  --card-foreground: #080B14;
+  --popover: #FFFCF6;
+  --popover-foreground: #080B14;
+  --primary: #080B14;
+  --primary-foreground: #ffffff;
+  --secondary: #F8F3EA;
+  --secondary-foreground: #080B14;
+  --muted-foreground: #6b7280;
+  --accent-foreground: #080B14;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --input: #E3DACC;
+  --ring: rgba(94, 242, 193, 0.4);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -46,9 +63,9 @@
   --color-mint-50: oklch(0.97 0.02 160);
   --color-mint-100: oklch(0.94 0.04 160);
   --color-mint-300: oklch(0.85 0.08 160);
-  --color-mint-500: oklch(0.65 0.15 160);
+  --color-mint-500: oklch(0.72 0.17 160);
   --color-mint-600: oklch(0.58 0.15 160);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -66,8 +83,8 @@ body {
 }
 
 .text-shimmer {
-  --shimmer-base: #7c3aed;
-  --shimmer-mid: #c084fc;
+  --shimmer-base: #080B14;
+  --shimmer-mid: #5EF2C1;
   --shimmer-highlight: #ffffff;
   background: linear-gradient(
     90deg,
@@ -198,4 +215,127 @@ input {
   html {
     @apply font-sans;
   }
+}
+
+/* ── Custom scrollbars ──────────────────────────────────────────────────── */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #CDBFAE transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #CDBFAE;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #B8B3A6;
+}
+
+/* ── Dark code block overrides ─────────────────────────────────────────── */
+
+/* Target the <code> element (which has language-*) and bare .hljs spans */
+code[class*="language-"],
+code[class*="language-"] .hljs {
+  color: #E6EDF3;
+}
+
+code[class*="language-"] .hljs-comment,
+code[class*="language-"] .hljs-quote {
+  color: #8B949E;
+  font-style: italic;
+}
+
+code[class*="language-"] .hljs-keyword,
+code[class*="language-"] .hljs-selector-tag,
+code[class*="language-"] .hljs-type {
+  color: #FF7B72;
+}
+
+code[class*="language-"] .hljs-string,
+code[class*="language-"] .hljs-addition,
+code[class*="language-"] .hljs-attr {
+  color: #A5D6FF;
+}
+
+code[class*="language-"] .hljs-number,
+code[class*="language-"] .hljs-literal {
+  color: #79C0FF;
+}
+
+code[class*="language-"] .hljs-function,
+code[class*="language-"] .hljs-title,
+code[class*="language-"] .hljs-title.function_ {
+  color: #D2A8FF;
+}
+
+code[class*="language-"] .hljs-built_in,
+code[class*="language-"] .hljs-builtin-name {
+  color: #FFA657;
+}
+
+code[class*="language-"] .hljs-variable,
+code[class*="language-"] .hljs-params {
+  color: #E6EDF3;
+}
+
+code[class*="language-"] .hljs-symbol,
+code[class*="language-"] .hljs-bullet {
+  color: #79C0FF;
+}
+
+code[class*="language-"] .hljs-meta {
+  color: #8B949E;
+}
+
+code[class*="language-"] .hljs-deletion {
+  color: #FFA198;
+}
+
+code[class*="language-"] .hljs-section,
+code[class*="language-"] .hljs-selector-class {
+  color: #79C0FF;
+}
+
+code[class*="language-"] .hljs-doctag {
+  color: #FF7B72;
+}
+
+code[class*="language-"] .hljs-tag {
+  color: #7EE787;
+}
+
+code[class*="language-"] .hljs-name {
+  color: #7EE787;
+}
+
+code[class*="language-"] .hljs-attribute {
+  color: #D2A8FF;
+}
+
+code[class*="language-"] .hljs-selector-pseudo {
+  color: #FFA657;
+}
+
+code[class*="language-"] .hljs-emphasis {
+  font-style: italic;
+}
+
+code[class*="language-"] .hljs-strong {
+  font-weight: 700;
+}
+
+code[class*="language-"] .hljs-link {
+  color: #A5D6FF;
+  text-decoration: underline;
 }

@@ -31,9 +31,7 @@ type Props = {
   modelName: string
   messages: Message[]
   streamState?: ThreadStreamState
-  /** When set, shows a per-thread input. Called with the thread's message. */
   onContinue?: (message: string) => void
-  /** Disable the per-thread input (e.g. while any thread is streaming). */
   disabled?: boolean
 }
 
@@ -71,14 +69,6 @@ export function ThreadPanel({
     streamState?.timeline.length,
   ])
 
-  // Auto-resize textarea
-  useEffect(() => {
-    const el = textareaRef.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`
-  }, [inputValue])
-
   const isStreaming = streamState?.status === 'streaming'
   const streamDone = streamState?.status === 'done'
   const latestAssistant = findLatestAssistant(messages)
@@ -93,18 +83,23 @@ export function ThreadPanel({
         : null
   const hasStreamContent =
     streamState && (streamState.text || streamState.timeline.length > 0)
-  // Show streaming overlay while actively streaming, or while done but
-  // historical messages haven't caught up yet (detail not refreshed).
   const showStreamOverlay = hasStreamContent && (isStreaming || (streamDone && messages.length === 0))
-
-  // Show per-thread input when onContinue is provided and we have messages
-  const showInput = onContinue && messages.length > 0
 
   useEffect(() => {
     if (!isStreaming) return
     const interval = window.setInterval(() => setMetricNow(Date.now()), 500)
     return () => window.clearInterval(interval)
   }, [isStreaming])
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`
+  }, [inputValue])
+
+  const showInput = onContinue && messages.length > 0
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -124,95 +119,93 @@ export function ThreadPanel({
   }
 
   return (
-    <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-sm shadow-slate-900/5">
-      {/* Thread header */}
-      <div className="flex items-start justify-between gap-3 border-b border-slate-200/70 bg-slate-50/70 px-4 py-3">
-        <div className="flex min-w-0 items-start gap-2.5">
-          <div className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-md bg-white text-slate-500 ring-1 ring-slate-200">
-            <Cpu className="size-4" />
+    <div className="flex h-full min-w-0 flex-col overflow-hidden rounded-[22px] border border-[#DCD2C3] bg-[#FFFCF6] shadow-[0_16px_50px_rgba(8,11,20,0.08)]">
+      {/* ── Dark model header ─────────────────────────────────────────── */}
+      <div className="shrink-0 bg-[#080B14] px-4 py-3.5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-2.5">
+            <div className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-lg bg-white/10 text-[#5EF2C1]">
+              <Cpu className="size-3.5" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-[#FFFCF6]">{displayName}</p>
+              <p className="truncate text-xs text-white/40">
+                {provider}/{modelName}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-950">{displayName}</p>
-            <p className="truncate text-xs text-slate-500">
-              {provider}/{modelName}
-            </p>
+          <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+            {headerMetrics && streamState?.status !== 'error' && (
+              <MetricBadge metrics={headerMetrics} isLive={isStreaming} />
+            )}
+            {streamState?.status === 'error' && (
+              <Badge variant="destructive">Error</Badge>
+            )}
           </div>
-        </div>
-        <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
-          {headerMetrics && streamState?.status !== 'error' && (
-            <MetricBadge metrics={headerMetrics} isLive={isStreaming} />
-          )}
-          {streamState?.status === 'error' && (
-            <Badge variant="destructive">Error</Badge>
-          )}
         </div>
       </div>
 
-      {/* Messages */}
+      {/* ── Messages ──────────────────────────────────────────────────── */}
       <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
-        {/* Historical messages */}
         {renderHistoricalMessages(messages, provider)}
 
-        {/* Live streaming content */}
         {showStreamOverlay && (
           <div className="space-y-3">
             {renderLiveTimeline(streamState.timeline, provider, isStreaming)}
 
             {streamState.text && (
               <AssistantFrame>
-                <div className="rounded-lg border border-slate-100 bg-white px-3 py-2.5 text-sm leading-relaxed shadow-sm shadow-slate-900/5">
+                <div className="rounded-2xl border border-[#E3DACC] bg-[#FFFCF6] px-4 py-3 text-sm leading-relaxed shadow-sm shadow-[#080B14]/5">
                   <MarkdownRenderer content={streamState.text} />
                   {isStreaming && (
-                    <span className="ml-1 inline-block size-1.5 animate-pulse rounded-full bg-slate-400" />
+                    <span className="ml-1 inline-block size-1.5 animate-pulse rounded-full bg-[#9CA3AF]" />
                   )}
                 </div>
               </AssistantFrame>
             )}
 
             {streamState.error && (
-              <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
+              <div className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">
                 {streamState.error}
               </div>
             )}
           </div>
         )}
 
-        {/* Empty state */}
         {messages.length === 0 && !showStreamOverlay && (
-          <div className="flex h-32 items-center justify-center text-xs text-slate-400">
+          <div className="flex h-32 items-center justify-center text-xs text-[#9CA3AF]">
             No messages yet
           </div>
         )}
       </div>
 
-      {/* Usage footer */}
+      {/* ── Usage footer ──────────────────────────────────────────────── */}
       {footerUsage && (
-        <div className="border-t border-slate-100 bg-slate-50/70 px-4 py-2">
+        <div className="shrink-0 border-t border-[#F1EADF] bg-[#F8F3EA]/70 px-4 py-2">
           <UsageBar usage={footerUsage.usage} latencyMs={footerUsage.latencyMs} />
         </div>
       )}
 
-      {/* Per-thread chat input */}
+      {/* ── Per-thread chat input ─────────────────────────────────────── */}
       {showInput && (
-        <div className="border-t border-slate-200/70 bg-white px-3 py-2.5">
-          <div className="flex items-end gap-2 rounded-lg border border-slate-200 bg-slate-50 p-1.5">
+        <div className="shrink-0 border-t border-[#E3DACC] bg-[#FFFCF6] px-3 py-2.5">
+          <div className="flex items-end gap-2 rounded-xl border border-[#E3DACC] bg-[#F8F3EA] p-1.5">
             <Textarea
               ref={textareaRef}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={disabled}
-              placeholder={disabled ? 'Streaming...' : 'Continue conversation...'}
+              placeholder={disabled ? 'Streaming...' : 'Continue...'}
               rows={1}
               className="min-h-8 max-h-[120px] resize-none border-0 bg-transparent px-2 py-1.5 text-sm shadow-none focus-visible:ring-0"
             />
             <Button
               type="button"
               size="icon"
-              variant="secondary"
               disabled={disabled || !inputValue.trim()}
               onClick={handleSend}
-              className="size-8 shrink-0 bg-white"
+              className="size-8 shrink-0 rounded-lg bg-[#080B14] text-white hover:bg-[#111827]"
             >
               <Send className="size-3.5" />
             </Button>
@@ -222,6 +215,8 @@ export function ThreadPanel({
     </div>
   )
 }
+
+// ── Metric badge (renders on dark header) ────────────────────────────────────
 
 type HeaderMetrics = {
   tpsLabel: string
@@ -235,52 +230,51 @@ function MetricBadge({
   metrics: HeaderMetrics
   isLive: boolean
 }) {
-  const [showTtftTip, setShowTtftTip] = useState(false)
+  const [showTip, setShowTip] = useState(false)
 
   return (
-    <Badge
-      variant="secondary"
+    <span
       className={cn(
-        'overflow-visible gap-1.5 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100',
-        isLive && 'bg-sky-50 text-sky-700 ring-sky-100',
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium',
+        'bg-[#5EF2C1]/12 text-[#5EF2C1] ring-1 ring-[#5EF2C1]/35',
+        isLive && 'bg-[#60A5FA]/12 text-[#60A5FA] ring-1 ring-[#60A5FA]/35',
       )}
     >
       {isLive && <Loader2 className="size-3 animate-spin" />}
       <span>{metrics.tpsLabel}</span>
-      <span className="text-current/45">·</span>
-      <span className="inline-flex items-center gap-1">
-        <span>{metrics.ttftLabel}</span>
-        <span className="relative inline-flex">
-          <button
-            type="button"
-            className="inline-flex size-4 items-center justify-center rounded-full text-current/60 outline-none transition hover:text-current focus-visible:ring-2 focus-visible:ring-current/30"
-            aria-label="Time to first token: how long the model took to start responding."
-            aria-expanded={showTtftTip}
-            onBlur={() => setShowTtftTip(false)}
-            onClick={() => setShowTtftTip((value) => !value)}
-            onFocus={() => setShowTtftTip(true)}
-            onMouseEnter={() => setShowTtftTip(true)}
-            onMouseLeave={() => setShowTtftTip(false)}
+      <span className="text-current/40">·</span>
+      <span>{metrics.ttftLabel}</span>
+      <span className="relative inline-flex">
+        <button
+          type="button"
+          className="inline-flex size-3.5 items-center justify-center rounded-full text-current/50 outline-none transition hover:text-current"
+          aria-label="Metrics detail"
+          aria-expanded={showTip}
+          onBlur={() => setShowTip(false)}
+          onClick={() => setShowTip((v) => !v)}
+          onFocus={() => setShowTip(true)}
+          onMouseEnter={() => setShowTip(true)}
+          onMouseLeave={() => setShowTip(false)}
+        >
+          <Info className="size-3" />
+          <span
+            role="tooltip"
+            className={cn(
+              'pointer-events-none absolute right-0 top-full z-20 mt-1 w-48 whitespace-normal break-words rounded-xl border border-[#E3DACC] bg-[#FFFCF6] px-2.5 py-2 text-left text-[11px] font-normal leading-snug text-[#4B5563] shadow-lg shadow-[#080B14]/10',
+              showTip ? 'block' : 'hidden',
+            )}
           >
-            <Info className="size-3" />
-            <span
-              role="tooltip"
-              className={cn(
-                'pointer-events-none absolute right-0 top-full z-20 mt-1 w-44 max-w-[calc(100vw-2rem)] whitespace-normal break-words rounded-md border border-slate-200 bg-white px-2.5 py-2 text-left text-[11px] font-normal leading-snug text-slate-600 shadow-lg shadow-slate-900/10 sm:w-52',
-                showTtftTip ? 'block' : 'hidden',
-              )}
-            >
-              Time to first token: how long the model took to start responding.
-            </span>
-          </button>
-        </span>
-        <span className="sr-only">
-          Time to first token: how long the model took to start responding.
-        </span>
+            Speed: {metrics.tpsLabel}
+            <br />
+            Time to first token: {metrics.ttftLabel}
+          </span>
+        </button>
       </span>
-    </Badge>
+    </span>
   )
 }
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function findLatestAssistant(messages: Message[]) {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -313,9 +307,9 @@ function metricsFromStream(
   return {
     tpsLabel:
       streamState.status === 'streaming' && tokens === 0
-        ? 'calculating'
+        ? '...'
         : formatTps(tokensPerSecond(tokens, elapsedMs), streamState.status === 'streaming'),
-    ttftLabel: ttftMs != null ? `TTFT ${formatDuration(ttftMs)}` : 'TTFT ...',
+    ttftLabel: ttftMs != null ? formatDuration(ttftMs) : '...',
   }
 }
 
@@ -328,8 +322,8 @@ function metricsFromMessage(message?: Message): HeaderMetrics | null {
   return {
     tpsLabel: formatTps(tokensPerSecond(tokens, message.latency_ms), false),
     ttftLabel: readTtftMs(message.usage) != null
-      ? `TTFT ${formatDuration(readTtftMs(message.usage) ?? 0)}`
-      : 'TTFT n/a',
+      ? formatDuration(readTtftMs(message.usage) ?? 0)
+      : 'n/a',
   }
 }
 
@@ -358,7 +352,7 @@ function tokensPerSecond(tokens: number | null, elapsedMs: number | null) {
 }
 
 function formatTps(value: number | null, estimated: boolean) {
-  if (value == null || !Number.isFinite(value)) return 'calculating'
+  if (value == null || !Number.isFinite(value)) return '...'
   const prefix = estimated ? '~' : ''
   return `${prefix}${value.toFixed(1)} tok/s`
 }
@@ -366,6 +360,10 @@ function formatTps(value: number | null, estimated: boolean) {
 function formatDuration(ms: number) {
   if (ms < 1000) return `${Math.round(ms)}ms`
   return `${(ms / 1000).toFixed(1)}s`
+}
+
+function formatNumber(n: number): string {
+  return n.toLocaleString('en-US')
 }
 
 // -- Message rendering --------------------------------------------------------
@@ -475,7 +473,7 @@ function MessageBubble({
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] rounded-lg bg-slate-950 px-3 py-2 text-sm text-white shadow-sm shadow-slate-950/10">
+        <div className="max-w-[85%] rounded-[18px] bg-[#080B14] px-3.5 py-2.5 text-sm text-white shadow-sm shadow-[#080B14]/10">
           <span className="whitespace-pre-wrap">{message.content}</span>
         </div>
       </div>
@@ -505,17 +503,17 @@ function MessageBubble({
           />
         )}
 
-        <div className="rounded-lg border border-slate-100 bg-white px-3 py-2.5 text-sm leading-relaxed shadow-sm shadow-slate-900/5">
+        <div className="rounded-[18px] border border-[#E3DACC] bg-[#FFFCF6] px-4 py-3 text-sm leading-relaxed shadow-sm shadow-[#080B14]/5">
           <MarkdownRenderer content={message.content} />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 px-1 text-[11px] text-slate-400">
+        <div className="flex flex-wrap items-center gap-2 px-1 text-[11px] text-[#9CA3AF]">
           {message.model && <span>{message.model}</span>}
           {message.latency_ms != null && <span>{message.latency_ms}ms</span>}
           {message.usage &&
             typeof message.usage === 'object' &&
             'total_tokens' in message.usage && (
-              <span>{(message.usage as Record<string, number>).total_tokens} tok</span>
+              <span>{formatNumber((message.usage as Record<string, number>).total_tokens)} tok</span>
             )}
         </div>
       </div>
@@ -526,7 +524,7 @@ function MessageBubble({
 function AssistantFrame({ children }: { children: ReactNode }) {
   return (
     <div className="flex gap-2.5">
-      <div className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-slate-950 text-[10px] font-bold text-white">
+      <div className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-[#080B14] text-[10px] font-bold text-white">
         AI
       </div>
       <div className="min-w-0 flex-1">{children}</div>
@@ -588,13 +586,13 @@ function ThinkingPanel({
   )
 
   return (
-    <div className="rounded-lg border border-violet-100 bg-violet-50/70 px-3 py-2">
+    <div className="rounded-xl border border-[#DDD6FE] bg-[#F3EDFF] px-3 py-2">
       <button
         type="button"
         className="flex w-full items-center justify-between gap-3 text-left"
         onClick={() => setExpanded((prev) => !prev)}
       >
-        <span className="flex min-w-0 items-center gap-2 text-xs font-medium text-violet-700">
+        <span className="flex min-w-0 items-center gap-2 text-xs font-medium text-[#6D28D9]">
           <Sparkles className="size-3.5 shrink-0" />
           <span className={cn(isLive && !expanded && 'text-shimmer')}>
             {liveLabel}
@@ -609,7 +607,7 @@ function ThinkingPanel({
       {expanded && (
         <pre
           className={cn(
-            'mt-2 max-h-60 overflow-auto whitespace-pre-wrap rounded-md bg-white/70 px-2.5 py-2 text-xs leading-relaxed text-violet-900',
+            'mt-2 max-h-60 overflow-auto whitespace-pre-wrap rounded-lg bg-white/70 px-2.5 py-2 text-xs leading-relaxed text-violet-900',
             isLive && 'text-shimmer',
           )}
         >
@@ -641,14 +639,14 @@ function ToolActivity({
     : `${completedCount} completed`
 
   return (
-    <div className="rounded-lg border border-amber-100 bg-amber-50/70 px-3 py-2 shadow-sm shadow-amber-950/5">
+    <div className="rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-3 py-2 shadow-sm shadow-amber-950/5">
       <button
         type="button"
         className="flex w-full items-center justify-between gap-3 text-left"
         onClick={() => setExpanded((prev) => !prev)}
       >
         <span className="flex min-w-0 items-center gap-2">
-          <span className="grid size-6 shrink-0 place-items-center rounded-md bg-white text-amber-700 ring-1 ring-amber-100">
+          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-white text-amber-700 ring-1 ring-[#FDE68A]">
             {hasActive ? (
               <Loader2 className="size-3.5 animate-spin" />
             ) : (
@@ -683,20 +681,20 @@ function ToolActivity({
           {runs.map((run, index) => (
             <div
               key={`${run.id}-${index}`}
-              className="rounded-md border border-amber-100 bg-white/80 px-2.5 py-2"
+              className="rounded-lg border border-[#FDE68A] bg-[#FFFCF6] px-2.5 py-2"
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
                   {run.status === 'running' ? (
                     <CircleDashed className="size-3.5 shrink-0 animate-spin text-amber-600" />
                   ) : (
-                    <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600" />
+                    <CheckCircle2 className="size-3.5 shrink-0 text-[#047857]" />
                   )}
-                  <span className="truncate font-mono text-[11px] text-slate-700">
+                  <span className="truncate font-mono text-[11px] text-[#374151]">
                     {run.tool}
                   </span>
                 </div>
-                <span className="shrink-0 text-[10px] uppercase tracking-wide text-slate-400">
+                <span className="shrink-0 text-[10px] uppercase tracking-wide text-[#9CA3AF]">
                   {run.status}
                 </span>
               </div>
@@ -717,11 +715,11 @@ function ToolActivity({
 
 function ToolDetail({ label, value }: { label: string; value: unknown }) {
   return (
-    <div className="mt-2 rounded-md bg-slate-50 px-2 py-1.5">
-      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+    <div className="mt-2 rounded-lg bg-[#F8F3EA] px-2 py-1.5">
+      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-[#9CA3AF]">
         {label}
       </p>
-      <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-slate-600">
+      <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-[#4B5563]">
         {formatValue(value)}
       </pre>
     </div>
@@ -833,11 +831,11 @@ function UsageBar({
   if (!input && !output && !total && latencyMs == null) return null
 
   return (
-    <div className="flex items-center gap-3 text-[11px] text-slate-500">
-      {input != null && <span>in {String(input)}</span>}
-      {output != null && <span>out {String(output)}</span>}
-      {total != null && <span>total {String(total)}</span>}
-      {latencyMs != null && <span>elapsed {formatDuration(latencyMs)}</span>}
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[#6B7280]">
+      {input != null && <span>Input {formatNumber(Number(input))}</span>}
+      {output != null && <span>Output {formatNumber(Number(output))}</span>}
+      {total != null && <span>Total {formatNumber(Number(total))}</span>}
+      {latencyMs != null && <span>{formatDuration(latencyMs)}</span>}
     </div>
   )
 }

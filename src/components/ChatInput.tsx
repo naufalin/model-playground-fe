@@ -56,13 +56,13 @@ export function ChatInput({
         disabled={disabled}
         placeholder={placeholder}
         rows={1}
-        className="min-h-[40px] max-h-[200px] resize-none"
+        className="min-h-[40px] max-h-[200px] resize-none rounded-xl border-[#E3DACC] bg-[#FFFCF6] text-[#080B14] placeholder:text-[#9CA3AF] focus-visible:border-[#5EF2C1] focus-visible:ring-[#5EF2C1]/30"
       />
       <Button
         type="submit"
         size="icon"
         disabled={disabled || !value.trim()}
-        className="shrink-0"
+        className="shrink-0 rounded-xl bg-[#080B14] text-white shadow-[0_6px_20px_rgba(8,11,20,0.15)] hover:bg-[#111827]"
       >
         <Send className="size-4" />
       </Button>

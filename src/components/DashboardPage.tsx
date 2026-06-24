@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
+  ArrowUpRight,
   BotMessageSquare,
   ChevronDown,
   Cpu,
@@ -11,7 +12,6 @@ import {
 } from 'lucide-react'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -126,25 +126,30 @@ export function DashboardPage() {
   const remainingModelCount = Math.max(0, data.models.length - 3)
 
   return (
-    <main className="min-h-screen bg-[#f7f3ea] text-slate-950">
+    <main className="min-h-screen bg-[#F4EFE6] text-[#080B14]">
       {/* ── Navbar ──────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/60 bg-[#f7f3ea]/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-[#E3DACC] bg-[#F4EFE6]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-lg bg-slate-950 text-xs font-black text-white shadow-sm shadow-slate-950/20">
+            <div className="grid size-9 place-items-center rounded-lg bg-[#080B14] text-xs font-black text-white shadow-sm shadow-[#080B14]/20">
               MP
             </div>
             <div>
               <p className="text-sm font-semibold tracking-tight">Model Playground</p>
-              <p className="text-[11px] text-slate-400">Dashboard</p>
+              <p className="text-[11px] text-[#6B7280]">Dashboard</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium">{displayName}</p>
-              <p className="text-[11px] text-slate-400">{user.email}</p>
+              <p className="text-[11px] text-[#6B7280]">{user.email}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={onLogout}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onLogout}
+              className="rounded-full border border-[#E3DACC] bg-[#FFFCF6] px-3.5 text-xs font-medium text-[#6B7280] hover:bg-[#F8F3EA] hover:text-[#080B14]"
+            >
               Logout
             </Button>
           </div>
@@ -155,8 +160,11 @@ export function DashboardPage() {
         {/* ── Hero: actions + stats ──────────────────────────────────────── */}
         <section className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
           {/* Left — actions */}
-          <div className="rounded-xl bg-slate-950 p-7 text-white shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-mint-500">
+          <div
+            className="rounded-3xl p-7 text-white shadow-[0_24px_70px_rgba(8,11,20,0.18)]"
+            style={{ background: 'linear-gradient(135deg, #080B14 0%, #101827 100%)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#5EF2C1]">
               Workspace ready
             </p>
             <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -165,7 +173,7 @@ export function DashboardPage() {
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button
                 size="default"
-                className="bg-white text-slate-950 hover:bg-slate-100"
+                className="bg-white text-[#080B14] hover:bg-[#F8F3EA] rounded-xl"
                 disabled={isCreating}
                 onClick={() => handleNewPlayground()}
               >
@@ -177,7 +185,7 @@ export function DashboardPage() {
                 <Button
                   variant="ghost"
                   size="default"
-                  className="border border-white/20 text-white hover:bg-white/10 hover:text-white"
+                  className="border border-white/15 text-white hover:bg-white/10 hover:text-white rounded-xl"
                   onClick={() => setShowSessionPicker((v) => !v)}
                   disabled={data.sessions.length === 0}
                 >
@@ -185,23 +193,21 @@ export function DashboardPage() {
                   <ChevronDown className="ml-1 size-3.5" />
                 </Button>
                 {showSessionPicker && data.sessions.length > 0 && (
-                  <div className="absolute left-0 top-full z-20 mt-2 w-72 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg shadow-slate-900/10">
+                  <div className="absolute left-0 top-full z-20 mt-2 w-72 overflow-hidden rounded-xl border border-[#E3DACC] bg-[#FFFCF6] shadow-lg shadow-[#080B14]/10">
                     {data.sessions.slice(0, 8).map((session) => (
                       <button
                         key={session.id}
                         type="button"
-                        className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm transition hover:bg-slate-50"
+                        className="flex w-full items-center justify-between px-3 py-2.5 text-left text-sm transition hover:bg-[#F8F3EA]"
                         onClick={() => {
                           setShowSessionPicker(false)
                           navigate(`/playground/${session.id}`)
                         }}
                       >
-                        <span className="truncate font-medium text-slate-900">
+                        <span className="truncate font-medium text-[#080B14]">
                           {session.title}
                         </span>
-                        <span className="ml-2 shrink-0 font-mono text-[11px] text-slate-400">
-                          {session.id}
-                        </span>
+                        <ArrowRight className="ml-2 size-3.5 shrink-0 text-[#9CA3AF]" />
                       </button>
                     ))}
                   </div>
@@ -227,6 +233,7 @@ export function DashboardPage() {
               label="Local lab"
               value={null}
               valueText="Ready"
+              highlight
             />
           </div>
         </section>
@@ -235,10 +242,12 @@ export function DashboardPage() {
         <section className="mt-6">
           <form
             onSubmit={handlePromptSubmit}
-            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5"
+            className="rounded-3xl border border-[#DDD2C2] bg-[#FFFCF6] p-5 shadow-[0_18px_50px_rgba(8,11,20,0.08)]"
           >
             <div className="flex items-center gap-3">
-              <Zap className="size-4 shrink-0 text-slate-400" />
+              <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#F1EADF] text-[#111827]">
+                <Zap className="size-4" />
+              </div>
               <input
                 ref={promptRef}
                 type="text"
@@ -246,13 +255,13 @@ export function DashboardPage() {
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Ask something to compare..."
                 disabled={isCreating}
-                className="flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                className="flex-1 bg-transparent text-sm text-[#080B14] placeholder:text-[#9CA3AF] focus:outline-none"
               />
               <Button
                 type="submit"
                 size="sm"
                 disabled={isCreating || !prompt.trim()}
-                className="shrink-0"
+                className="shrink-0 rounded-full bg-[#080B14] px-4 text-white shadow-[0_6px_20px_rgba(8,11,20,0.15)] hover:bg-[#111827]"
               >
                 Run comparison
                 <ArrowRight className="ml-1 size-3.5" />
@@ -261,7 +270,7 @@ export function DashboardPage() {
 
             {/* Model chips */}
             {data.models.length > 0 && (
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-3">
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-[#E3DACC] pt-3">
                 {quickModelChips.map((model) => {
                   const selected = selectedQuickModels.some((m) => m.id === model.id)
                   return (
@@ -272,14 +281,14 @@ export function DashboardPage() {
                       className={cn(
                         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all',
                         selected
-                          ? 'border-mint-300 bg-mint-50 text-mint-700'
-                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50',
+                          ? 'border-[#B8F3DC] bg-[#E8FFF6] text-[#047857]'
+                          : 'border-[#E3DACC] bg-white text-[#111827] hover:border-[#CDBFAE] hover:bg-[#F8F3EA]',
                       )}
                     >
                       <span
                         className={cn(
                           'size-1.5 rounded-full',
-                          selected ? 'bg-mint-500' : 'bg-slate-300',
+                          selected ? 'bg-[#047857]' : 'bg-[#CDBFAE]',
                         )}
                       />
                       {model.display_name}
@@ -290,7 +299,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setShowAllModels(true)}
-                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-400 transition-colors hover:border-slate-400 hover:text-slate-600"
+                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-[#CDBFAE] px-2.5 py-1 text-xs font-medium text-[#6B7280] transition-colors hover:border-[#B8B3A6] hover:text-[#111827]"
                   >
                     +{remainingModelCount} more
                   </button>
@@ -299,7 +308,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => setShowAllModels(false)}
-                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-slate-400 transition-colors hover:text-slate-600"
+                    className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-[#6B7280] transition-colors hover:text-[#111827]"
                   >
                     Show less
                   </button>
@@ -318,9 +327,9 @@ export function DashboardPage() {
 
         {/* ── Model registry + recent work ───────────────────────────────── */}
         <section className="mt-8 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-          <Card>
+          <Card className="rounded-3xl border-[#E3DACC] bg-[#FFFCF6] shadow-[0_10px_30px_rgba(8,11,20,0.06)]">
             <CardHeader>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6B7280]">
                 {isLoading ? 'Loading registry' : 'Available models'}
               </p>
               <CardTitle>Model registry</CardTitle>
@@ -348,9 +357,9 @@ export function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-3xl border-[#E3DACC] bg-[#FFFCF6] shadow-[0_10px_30px_rgba(8,11,20,0.06)]">
             <CardHeader>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6B7280]">
                 {isLoading ? 'Loading history' : 'Recent work'}
               </p>
               <CardTitle>Playground sessions</CardTitle>
@@ -360,19 +369,22 @@ export function DashboardPage() {
                 <div className="space-y-2">
                   {data.sessions.map((session) => (
                     <button
-                      className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition-all duration-150 hover:border-mint-300 hover:bg-slate-50/50 hover:shadow-sm"
+                      className="group flex w-full items-center justify-between rounded-2xl border border-[#E3DACC] bg-[#FFFCF6] px-4 py-3 text-left transition-all duration-150 hover:border-[#CDBFAE] hover:bg-[#FFFDF8] hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(8,11,20,0.06)]"
                       key={session.id}
                       onClick={() => navigate(`/playground/${session.id}`)}
                     >
-                      <div>
-                        <p className="font-medium">{session.title}</p>
-                        <p className="mt-0.5 text-xs text-slate-400">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[15px] font-medium text-[#080B14]">{session.title}</p>
+                        <p className="mt-0.5 text-xs text-[#6B7280]">
                           Created {formatDate(session.created_at)}
                         </p>
                       </div>
-                      <Badge variant="secondary" className="bg-mint-50 text-mint-600 font-mono text-[11px]">
-                        {session.id}
-                      </Badge>
+                      <div className="ml-3 flex shrink-0 items-center gap-2">
+                        <span className="font-mono text-[11px] text-[#9CA3AF] transition-colors group-hover:text-[#6B7280]">
+                          {session.id}
+                        </span>
+                        <ArrowUpRight className="size-4 text-[#CDBFAE] transition-all group-hover:text-[#047857] group-hover:-translate-y-px group-hover:translate-x-px" />
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -410,22 +422,30 @@ function StatRow({
   label,
   value,
   valueText,
+  highlight,
 }: {
   icon: React.ReactNode
   label: string
   value: number | null
   valueText?: string
+  highlight?: boolean
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm shadow-slate-900/5">
-      <div className="grid size-8 place-items-center rounded-md bg-slate-50 text-slate-500">
+    <div className="flex items-center gap-3 rounded-2xl border border-[#E3DACC] bg-[#FFFCF6] px-4 py-3 shadow-[0_10px_30px_rgba(8,11,20,0.06)]">
+      <div className="grid size-9 place-items-center rounded-[14px] bg-[#F1EADF] text-[#111827]">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-slate-400">{label}</p>
-        <p className="text-lg font-semibold tracking-tight">
-          {valueText ?? (value != null ? String(value) : '—')}
-        </p>
+        <p className="text-xs font-medium text-[#6B7280]">{label}</p>
+        {highlight && valueText ? (
+          <span className="mt-0.5 inline-flex items-center rounded-full border border-[#B8F3DC] bg-[#E8FFF6] px-2.5 py-0.5 text-sm font-semibold text-[#047857]">
+            {valueText}
+          </span>
+        ) : (
+          <p className="text-lg font-semibold tracking-tight text-[#080B14]">
+            {valueText ?? (value != null ? String(value) : '—')}
+          </p>
+        )}
       </div>
     </div>
   )
@@ -443,7 +463,7 @@ function ModelCard({
   return (
     <button
       type="button"
-      className="group flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition-all duration-150 hover:border-mint-300 hover:shadow-sm"
+      className="group flex w-full items-center gap-3 rounded-2xl border border-[#E3DACC] bg-[#FFFCF6] px-4 py-3 text-left transition-all duration-150 hover:border-[#CDBFAE] hover:bg-[#FFFDF8] hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(8,11,20,0.06)]"
       onClick={onClick}
     >
       {/* Provider initial */}
@@ -458,8 +478,8 @@ function ModelCard({
 
       {/* Name + slug */}
       <div className="min-w-0 flex-1">
-        <p className="font-medium">{model.display_name}</p>
-        <p className="mt-0.5 font-mono text-xs text-slate-400 truncate">
+        <p className="text-[15px] font-medium text-[#080B14]">{model.display_name}</p>
+        <p className="mt-0.5 font-mono text-xs text-[#6B7280] truncate">
           {model.provider}/{model.model_name}
         </p>
       </div>
@@ -496,12 +516,12 @@ function getModelCapabilities(model: Model): Capability[] {
   if (model.provider === 'openrouter') {
     caps.push({
       label: 'OpenRouter',
-      className: 'bg-violet-50 text-violet-600 ring-1 ring-violet-100',
+      className: 'bg-[#F8F3EA] text-[#4B5563] ring-1 ring-[#E3DACC]',
     })
   } else if (model.provider === 'openai') {
     caps.push({
       label: 'OpenAI',
-      className: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200',
+      className: 'bg-[#F8F3EA] text-[#4B5563] ring-1 ring-[#E3DACC]',
     })
   }
 
@@ -509,7 +529,7 @@ function getModelCapabilities(model: Model): Capability[] {
   if (model.supports_reasoning) {
     caps.push({
       label: 'Reasoning',
-      className: 'bg-mint-50 text-mint-600 ring-1 ring-mint-100',
+      className: 'bg-[#E8FFF6] text-[#047857] ring-1 ring-[#B8F3DC]',
     })
   }
 
@@ -518,13 +538,13 @@ function getModelCapabilities(model: Model): Capability[] {
   if (name.includes('nano')) {
     caps.push({
       label: 'Nano',
-      className: 'bg-sky-50 text-sky-600 ring-1 ring-sky-100',
+      className: 'bg-[#F8F3EA] text-[#4B5563] ring-1 ring-[#E3DACC]',
       icon: Zap,
     })
   } else if (name.includes('mini')) {
     caps.push({
       label: 'Fast',
-      className: 'bg-amber-50 text-amber-600 ring-1 ring-amber-100',
+      className: 'bg-[#F8F3EA] text-[#4B5563] ring-1 ring-[#E3DACC]',
       icon: Zap,
     })
   }
@@ -539,10 +559,10 @@ function providerInitial(provider: string): string {
 }
 
 function providerColor(provider: string): string {
-  if (provider === 'openrouter') return 'bg-violet-600'
-  if (provider === 'openai') return 'bg-slate-800'
-  if (provider.includes('qwen') || provider.includes('alibaba')) return 'bg-orange-600'
-  return 'bg-slate-600'
+  if (provider === 'openrouter') return 'bg-[#080B14]'
+  if (provider === 'openai') return 'bg-[#334155]'
+  if (provider.includes('qwen') || provider.includes('alibaba')) return 'bg-[#080B14]'
+  return 'bg-[#334155]'
 }
 
 // ── Shared ───────────────────────────────────────────────────────────────────
@@ -563,16 +583,16 @@ function EmptyState({
   action?: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-slate-300 bg-white px-5 text-center">
+    <div className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#E3DACC] bg-[#FFFCF6] px-5 text-center">
       {isLoading ? (
-        <p className="text-sm font-medium text-slate-500">{loadingText}</p>
+        <p className="text-sm font-medium text-[#6B7280]">{loadingText}</p>
       ) : (
         <>
-          {Icon && <Icon className="size-8 text-slate-300" />}
+          {Icon && <Icon className="size-8 text-[#CDBFAE]" />}
           <div>
-            <p className="text-sm font-medium text-slate-500">{text}</p>
+            <p className="text-sm font-medium text-[#6B7280]">{text}</p>
             {description && (
-              <p className="mt-1 text-xs text-slate-400">{description}</p>
+              <p className="mt-1 text-xs text-[#9CA3AF]">{description}</p>
             )}
           </div>
           {action}

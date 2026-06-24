@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import { Check, Copy } from 'lucide-react'
 
-import 'highlight.js/styles/github.css'
+import 'highlight.js/styles/github-dark.css'
 
 type Props = {
   content: string
@@ -35,7 +35,7 @@ const components: Components = {
     if (isInline) {
       return (
         <code
-          className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] font-mono text-slate-800"
+          className="rounded-md bg-[#F8F3EA] px-1.5 py-0.5 text-[13px] font-mono text-[#111827] ring-1 ring-[#E3DACC]"
           {...props}
         >
           {children}
@@ -77,7 +77,7 @@ const components: Components = {
   // Blockquote
   blockquote({ children }) {
     return (
-      <blockquote className="mb-2 border-l-2 border-slate-300 pl-3 text-sm italic text-slate-600 last:mb-0">
+      <blockquote className="mb-2 border-l-2 border-[#CDBFAE] pl-3 text-sm italic text-[#4B5563] last:mb-0">
         {children}
       </blockquote>
     )
@@ -89,7 +89,7 @@ const components: Components = {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-blue-600 underline hover:text-blue-800"
+        className="text-[#1D4ED8] underline hover:text-[#1E3A8A]"
       >
         {children}
       </a>
@@ -105,19 +105,19 @@ const components: Components = {
   },
   th({ children }) {
     return (
-      <th className="border border-slate-200 bg-slate-50 px-2 py-1 text-left text-xs font-semibold">
+      <th className="border border-[#E3DACC] bg-[#F8F3EA] px-2 py-1 text-left text-xs font-semibold text-[#080B14]">
         {children}
       </th>
     )
   },
   td({ children }) {
     return (
-      <td className="border border-slate-200 px-2 py-1 text-sm">{children}</td>
+      <td className="border border-[#E3DACC] px-2 py-1 text-sm">{children}</td>
     )
   },
   // Horizontal rule
   hr() {
-    return <hr className="my-3 border-slate-200" />
+    return <hr className="my-3 border-[#E3DACC]" />
   },
 }
 
@@ -154,11 +154,11 @@ function CodeBlock({
 
   return (
     <div className="group/code relative mb-2 last:mb-0">
-      <div className="flex items-center justify-between rounded-t-md border border-b-0 border-slate-200 bg-slate-50 px-3 py-1.5">
-        <span className="text-xs font-medium text-slate-500">{language}</span>
+      <div className="flex items-center justify-between rounded-t-2xl border border-b-0 border-[#2A2F3A] bg-[#1B2028] px-4 py-2">
+        <span className="text-xs font-medium text-[#8B949E]">{language}</span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-slate-400 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-600 group-hover/code:opacity-100"
+          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs text-[#8B949E] opacity-0 transition-opacity hover:bg-white/10 hover:text-[#C9D1D9] group-hover/code:opacity-100"
         >
           {copied ? (
             <>
@@ -173,8 +173,8 @@ function CodeBlock({
           )}
         </button>
       </div>
-      <pre className="overflow-x-auto rounded-b-md border border-t-0 border-slate-200 bg-white p-3">
-        <code className={`language-${language} text-[13px]`}>{children}</code>
+      <pre className="overflow-x-auto rounded-b-2xl border border-t-0 border-[#2A2F3A] bg-[#1B2028] p-4 text-[13px] leading-[1.65]">
+        <code className={`language-${language}`}>{children}</code>
       </pre>
     </div>
   )

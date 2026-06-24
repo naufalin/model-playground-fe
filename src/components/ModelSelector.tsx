@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { Model, ModelSelect } from '@/lib/api'
+import { cn } from '@/lib/utils'
 
 type Props = {
   models: Model[]
@@ -58,7 +59,7 @@ export function ModelSelector({ models, selected, onChange, disabled }: Props) {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6B7280]">
         Select models to compare
       </p>
       <div className="flex flex-wrap gap-2">
@@ -74,13 +75,18 @@ export function ModelSelector({ models, selected, onChange, disabled }: Props) {
                 size="sm"
                 disabled={disabled}
                 onClick={() => toggleModel(model)}
-                className="gap-1.5"
+                className={cn(
+                  'gap-1.5 rounded-xl',
+                  active
+                    ? 'bg-[#080B14] text-white hover:bg-[#111827]'
+                    : 'border-[#E3DACC] bg-[#FFFCF6] text-[#080B14] hover:bg-[#F8F3EA]',
+                )}
               >
                 {model.display_name}
                 {model.supports_reasoning && (
                   <Badge
                     variant="secondary"
-                    className="ml-0.5 h-4 px-1 text-[10px]"
+                    className="ml-0.5 h-4 px-1 text-[10px] bg-[#E8FFF6] text-[#047857] ring-1 ring-[#B8F3DC]"
                   >
                     R
                   </Badge>
@@ -88,7 +94,7 @@ export function ModelSelector({ models, selected, onChange, disabled }: Props) {
               </Button>
               {active && model.supports_reasoning && sel && (
                 <select
-                  className="h-7 rounded-md border border-slate-200 bg-white px-1.5 text-xs font-medium text-slate-600"
+                  className="h-7 rounded-lg border border-[#E3DACC] bg-[#FFFCF6] px-1.5 text-xs font-medium text-[#4B5563]"
                   value={sel.reasoning_effort ?? 'medium'}
                   onChange={(e) =>
                     setReasoningEffort(
