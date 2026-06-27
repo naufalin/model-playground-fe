@@ -221,8 +221,9 @@ function reducer(state: State, action: Action): State {
     case 'THREAD_DONE': {
       const threads = ensureThread(state.threads, action.threadId)
       const t = threads[action.threadId]
-      // Use content from thread_done as fallback if no text_delta events were received
-      const text = t.text || action.content || ''
+      // Prefer the final content snapshot when available; providers can emit a
+      // corrected final message after earlier deltas.
+      const text = action.content || t.text || ''
       const hasThinking = t.timeline.some((event) => event.type === 'thinking')
       const doneThinking = hasThinking
         ? null

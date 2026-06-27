@@ -17,7 +17,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { MarkdownRenderer } from '@/components/MarkdownRenderer'
-import { VisualizationIframe } from '@/components/VisualizationIframe'
 import type { Message } from '@/lib/api'
 import type {
   StreamTimelineEvent,
@@ -42,7 +41,6 @@ type ToolRun = {
   status: 'running' | 'done'
   args?: unknown
   outputPreview?: string | null
-  vizHtml?: string | null
 }
 
 export function ThreadPanel({
@@ -83,9 +81,13 @@ export function ThreadPanel({
       : latestAssistant?.usage
         ? { usage: latestAssistant.usage, latencyMs: latestAssistant.latency_ms }
         : null
-  const hasStreamContent =
-    streamState && (streamState.text || streamState.timeline.length > 0)
-  const showStreamOverlay = hasStreamContent && (isStreaming || (streamDone && messages.length === 0))
+  const hasStreamContent = Boolean(
+    streamState && (streamState.text || streamState.timeline.length > 0),
+  )
+  const showStreamOverlay =
+    hasStreamContent &&
+    (isStreaming ||
+      (streamDone && !hasPersistedStreamResult(messages, streamState)))
 
   useEffect(() => {
     if (!isStreaming) return
@@ -283,6 +285,68 @@ function findLatestAssistant(messages: Message[]) {
     if (messages[index].role === 'assistant') return messages[index]
   }
   return undefined
+}
+
+function hasPersistedStreamResult(
+  messages: Message[],
+  streamState?: ThreadStreamState,
+) {
+  if (!streamState) return true
+
+  const scopedMessages = messagesAfterStreamStart(messages, streamState)
+  const candidates = scopedMessages.length > 0 ? scopedMessages : messages
+  const streamText = streamState.text.trim()
+
+  if (streamText) {
+    return candidates.some(
+      (message) =>
+        message.role === 'assistant' && message.content.trim() === streamText,
+    )
+  }
+
+  const completedToolCallIds = streamState.toolEvents
+    .filter((event) => event.type === 'tool_end' && event.callId)
+    .map((event) => event.callId)
+
+  if (completedToolCallIds.length > 0) {
+    return completedToolCallIds.every((callId) =>
+      candidates.some(
+        (message) =>
+          message.role === 'tool' &&
+          message.tool_call_id === callId &&
+          Boolean(message.output_preview),
+      ),
+    )
+  }
+
+  const latestThinking = [...streamState.timeline]
+    .reverse()
+    .find((event) => event.type === 'thinking')
+
+  if (latestThinking?.type === 'thinking' && latestThinking.content.trim()) {
+    const content = latestThinking.content.trim()
+    return candidates.some(
+      (message) =>
+        message.role === 'thinking' && message.content.trim() === content,
+    )
+  }
+
+  return true
+}
+
+function messagesAfterStreamStart(
+  messages: Message[],
+  streamState: ThreadStreamState,
+) {
+  const streamStartSlopMs = 3000
+  return messages.filter((message) => {
+    if (!message.created_at) return false
+    const createdAt = Date.parse(message.created_at)
+    return (
+      Number.isFinite(createdAt) &&
+      createdAt >= streamState.startedAt - streamStartSlopMs
+    )
+  })
 }
 
 function metricsFromStream(
@@ -680,9 +744,7 @@ function ToolActivity({
 
       {expanded && (
         <div className="mt-2 space-y-2">
-          {runs.map((run, index) => {
-            const viz = extractVisualization(run)
-            return (
+          {runs.map((run, index) => (
               <div
                 key={`${run.id}-${index}`}
                 className="rounded-lg border border-amber-500/15 bg-white/5 px-2.5 py-2"
@@ -703,21 +765,14 @@ function ToolActivity({
                   </span>
                 </div>
 
-                {run.args !== undefined && !viz && (
+                {run.args !== undefined && (
                   <ToolDetail label="input" value={run.args} />
                 )}
-                {viz ? (
-                  <div className="mt-2">
-                    <VisualizationIframe html={viz.html} title={viz.title} />
-                  </div>
-                ) : (
-                  run.outputPreview && (
-                    <ToolDetail label="output" value={run.outputPreview} />
-                  )
+                {run.outputPreview && (
+                  <ToolDetail label="output" value={run.outputPreview} />
                 )}
               </div>
-            )
-          })}
+          ))}
         </div>
       )}
     </div>
@@ -763,7 +818,6 @@ function toolRunsFromEvents(events: ToolEvent[]): ToolRun[] {
       tool: event.tool,
       status: 'done',
       outputPreview: cleanPreview(event.outputPreview),
-      vizHtml: event.vizHtml ?? existing.vizHtml,
     })
   })
 
@@ -791,7 +845,6 @@ function toolRunsFromMessages(messages: Message[]): ToolRun[] {
       status: isDone ? 'done' : existing.status,
       args: message.tool_input ?? existing.args,
       outputPreview: cleanPreview(message.output_preview) ?? existing.outputPreview,
-      vizHtml: extractVizFromContent(message) ?? existing.vizHtml,
     })
   })
 
@@ -826,38 +879,6 @@ function formatValue(value: unknown) {
   } catch {
     return String(value)
   }
-}
-
-function extractVisualization(
-  run: ToolRun,
-): { html: string; title?: string } | null {
-  if (!run.vizHtml) return null
-  try {
-    const output = JSON.parse(run.vizHtml)
-    if (output && typeof output.html === 'string') {
-      return { html: output.html, title: output.title }
-    }
-  } catch {
-    // vizHtml might be raw HTML
-    if (run.vizHtml.trim().startsWith('<')) {
-      return { html: run.vizHtml }
-    }
-  }
-  return null
-}
-
-function extractVizFromContent(message: Message): string | null {
-  if (message.role !== 'tool' || message.tool_name !== 'generate_visualization')
-    return null
-  try {
-    const output = JSON.parse(message.content)
-    if (output && typeof output.html === 'string') {
-      return message.content
-    }
-  } catch {
-    // not JSON
-  }
-  return null
 }
 
 // -- Usage -------------------------------------------------------------------

@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input'
 import { ChatInput } from '@/components/ChatInput'
 import { ModelSelector } from '@/components/ModelSelector'
 import { ThreadPanel } from '@/components/ThreadPanel'
+import { VisualizationIframe } from '@/components/VisualizationIframe'
 import { useAuth } from '@/lib/use-auth'
 import { useChatStream } from '@/lib/use-chat-stream'
 import {
@@ -28,7 +29,15 @@ import {
   getPlaygroundDetail,
   updatePlayground,
 } from '@/lib/api'
-import type { Model, ModelSelect, PlaygroundDetail } from '@/lib/api'
+import type { Message, Model, ModelSelect, PlaygroundDetail } from '@/lib/api'
+import type { ToolEvent } from '@/lib/use-chat-stream'
+
+type SelectedVisualization = {
+  html: string
+  title?: string
+  threadId: string
+  source: 'live' | 'history'
+}
 
 export function PlaygroundPage() {
   const { id } = useParams<{ id: string }>()
@@ -227,6 +236,13 @@ export function PlaygroundPage() {
   const threadMeta = new Map(
     detail?.threads.map((t) => [t.id, t]) ?? [],
   )
+  const selectedVisualization = findLatestVisualization(
+    allThreadIds,
+    threadMessages,
+    streamState.threads,
+  )
+  const hasVisualization = selectedVisualization !== null
+  const showSideVisualization = allThreadIds.length === 1 && hasVisualization
 
   // Find the first user message for the context bar
   const contextPrompt = sentPrompt ?? initialPrompt ?? null
@@ -428,36 +444,197 @@ export function PlaygroundPage() {
 
             {/* Thread panels */}
 
-            <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden px-4 py-4 sm:px-5">
-              <div
-                className="grid h-full min-w-fit gap-4"
-                style={{
-                  gridTemplateColumns: `repeat(${Math.min(allThreadIds.length, 3)}, minmax(340px, 1fr))`,
-                }}
-              >
-                {allThreadIds.map((threadId) => {
-                  const meta = threadMeta.get(threadId)
-                  const historical = threadMessages.get(threadId) ?? []
-                  const stream = streamState.threads[threadId]
-
-                  return (
-                    <ThreadPanel
-                      key={threadId}
-                      displayName={meta?.display_name ?? stream?.modelName ?? threadId}
-                      provider={meta?.provider ?? stream?.provider ?? 'unknown'}
-                      modelName={meta?.model_name ?? stream?.modelName ?? threadId}
-                      messages={historical}
-                      streamState={stream}
-                      onContinue={(msg) => handleContinue(threadId, msg)}
-                      disabled={stream?.status === 'streaming'}
-                    />
-                  )
-                })}
-              </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+              {showSideVisualization ? (
+                <div className="mx-auto grid h-full max-w-[1600px] grid-cols-1 gap-4 lg:grid-cols-[minmax(340px,1fr)_minmax(420px,0.9fr)]">
+                  {renderThreadPanels(
+                    allThreadIds,
+                    threadMeta,
+                    threadMessages,
+                    streamState.threads,
+                    handleContinue,
+                  )}
+                  <VisualizationPane visualization={selectedVisualization} />
+                </div>
+              ) : (
+                <div className="flex h-full min-h-full flex-col gap-4">
+                  <div className="min-h-[420px] flex-1 overflow-x-auto overflow-y-hidden">
+                    <div
+                      className="grid h-full min-w-fit gap-4"
+                      style={{
+                        gridTemplateColumns: `repeat(${Math.min(allThreadIds.length, 3)}, minmax(340px, 1fr))`,
+                      }}
+                    >
+                      {renderThreadPanels(
+                        allThreadIds,
+                        threadMeta,
+                        threadMessages,
+                        streamState.threads,
+                        handleContinue,
+                      )}
+                    </div>
+                  </div>
+                  {selectedVisualization && (
+                    <div className="mx-auto w-full max-w-[1600px]">
+                      <VisualizationPane visualization={selectedVisualization} />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
     </main>
   )
+}
+
+function renderThreadPanels(
+  threadIds: string[],
+  threadMeta: Map<string, PlaygroundDetail['threads'][number]>,
+  threadMessages: Map<string, Message[]>,
+  streamThreads: ReturnType<typeof useChatStream>['streamState']['threads'],
+  onContinue: (threadId: string, message: string) => void,
+) {
+  return threadIds.map((threadId) => {
+    const meta = threadMeta.get(threadId)
+    const historical = threadMessages.get(threadId) ?? []
+    const stream = streamThreads[threadId]
+
+    return (
+      <ThreadPanel
+        key={threadId}
+        displayName={meta?.display_name ?? stream?.modelName ?? threadId}
+        provider={meta?.provider ?? stream?.provider ?? 'unknown'}
+        modelName={meta?.model_name ?? stream?.modelName ?? threadId}
+        messages={historical}
+        streamState={stream}
+        onContinue={(msg) => onContinue(threadId, msg)}
+        disabled={stream?.status === 'streaming'}
+      />
+    )
+  })
+}
+
+function VisualizationPane({
+  visualization,
+}: {
+  visualization: SelectedVisualization
+}) {
+  const label =
+    visualization.source === 'live'
+      ? 'Generated visualization'
+      : 'Saved visualization'
+
+  return (
+    <section className="flex min-h-[360px] min-w-0 flex-col overflow-hidden rounded-[22px] border border-white/10 bg-white/5 p-3 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
+      <div className="mb-2 flex shrink-0 items-center justify-between gap-3 px-1">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-[#FFFCF6]">
+            {visualization.title ?? label}
+          </p>
+          <p className="truncate font-mono text-[11px] text-white/35">
+            {visualization.threadId}
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-white/45">
+          iframe
+        </span>
+      </div>
+      <div className="min-h-0 flex-1">
+        <VisualizationIframe
+          html={visualization.html}
+          title={visualization.title ?? label}
+        />
+      </div>
+    </section>
+  )
+}
+
+function findLatestVisualization(
+  threadIds: string[],
+  threadMessages: Map<string, Message[]>,
+  streamThreads: ReturnType<typeof useChatStream>['streamState']['threads'],
+): SelectedVisualization | null {
+  let historical: SelectedVisualization | null = null
+
+  for (const threadId of threadIds) {
+    const messages = threadMessages.get(threadId) ?? []
+    for (const message of messages) {
+      const parsed = visualizationFromMessage(message)
+      if (parsed) {
+        historical = { ...parsed, threadId, source: 'history' }
+      }
+    }
+  }
+
+  let live: SelectedVisualization | null = null
+  let hasStreamingLiveVisualization = false
+  for (const threadId of threadIds) {
+    const stream = streamThreads[threadId]
+    if (!stream) continue
+    for (const item of stream.timeline) {
+      if (item.type !== 'tool') continue
+      const parsed = visualizationFromToolEvent(item.event)
+      if (parsed) {
+        live = { ...parsed, threadId, source: 'live' }
+        if (stream.status === 'streaming') {
+          hasStreamingLiveVisualization = true
+        }
+      }
+    }
+  }
+
+  if (hasStreamingLiveVisualization) return live
+  if (live && historical?.html === live.html) return historical
+  return live ?? historical
+}
+
+function visualizationFromToolEvent(
+  event: ToolEvent,
+): Pick<SelectedVisualization, 'html' | 'title'> | null {
+  if (event.type !== 'tool_end' || !event.vizHtml) {
+    return null
+  }
+  return parseVisualizationHtml(event.vizHtml)
+}
+
+function visualizationFromMessage(
+  message: Message,
+): Pick<SelectedVisualization, 'html' | 'title'> | null {
+  if (message.role !== 'tool') {
+    return null
+  }
+  if (message.viz_html) {
+    return parseVisualizationHtml(message.viz_html)
+  }
+  return parseVisualizationHtml(message.content)
+}
+
+function parseVisualizationHtml(
+  value: string,
+): Pick<SelectedVisualization, 'html' | 'title'> | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (trimmed.startsWith('<')) {
+    return { html: value }
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown
+    if (parsed && typeof parsed === 'object' && 'html' in parsed) {
+      const html = (parsed as { html?: unknown }).html
+      const title = (parsed as { title?: unknown }).title
+      if (typeof html === 'string' && html) {
+        return {
+          html,
+          title: typeof title === 'string' ? title : undefined,
+        }
+      }
+    }
+  } catch {
+    // Not a JSON visualization payload.
+  }
+
+  return null
 }

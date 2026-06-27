@@ -47,6 +47,7 @@ export type Message = {
   tool_call_id: string | null
   tool_input: Record<string, unknown> | null
   output_preview: string | null
+  viz_html: string | null
   output_delta_count: number | null
   request_options: Record<string, unknown> | null
   created_at: string | null
