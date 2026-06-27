@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { MessageSquarePlus, Pencil, Plus, Square, Trash2 } from 'lucide-react'
+import { Eye, EyeOff, MessageSquarePlus, Pencil, Plus, Square, Trash2 } from 'lucide-react'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -55,6 +55,7 @@ export function PlaygroundPage() {
   const [selectedModels, setSelectedModels] = useState<ModelSelect[]>([])
   const [message, setMessage] = useState('')
   const [sentPrompt, setSentPrompt] = useState<string | null>(null)
+  const [isVisualizationVisible, setIsVisualizationVisible] = useState(true)
   const { streamState, sendMultiChat, sendContinueChat, abort, reset } =
     useChatStream(token, id ?? '')
   const prevChatStatus = useRef(streamState.chatStatus)
@@ -242,7 +243,14 @@ export function PlaygroundPage() {
     streamState.threads,
   )
   const hasVisualization = selectedVisualization !== null
-  const showSideVisualization = allThreadIds.length === 1 && hasVisualization
+  const showSideVisualization =
+    allThreadIds.length === 1 && hasVisualization && isVisualizationVisible
+
+  useEffect(() => {
+    if (selectedVisualization) {
+      setIsVisualizationVisible(true)
+    }
+  }, [selectedVisualization?.html, selectedVisualization?.threadId])
 
   // Find the first user message for the context bar
   const contextPrompt = sentPrompt ?? initialPrompt ?? null
@@ -454,7 +462,11 @@ export function PlaygroundPage() {
                     streamState.threads,
                     handleContinue,
                   )}
-                  <VisualizationPane visualization={selectedVisualization} />
+                  <VisualizationPane
+                    visualization={selectedVisualization}
+                    isVisible={isVisualizationVisible}
+                    onToggle={() => setIsVisualizationVisible((visible) => !visible)}
+                  />
                 </div>
               ) : (
                 <div className="flex h-full min-h-full flex-col gap-4">
@@ -476,7 +488,13 @@ export function PlaygroundPage() {
                   </div>
                   {selectedVisualization && (
                     <div className="mx-auto w-full max-w-[1600px]">
-                      <VisualizationPane visualization={selectedVisualization} />
+                      <VisualizationPane
+                        visualization={selectedVisualization}
+                        isVisible={isVisualizationVisible}
+                        onToggle={() =>
+                          setIsVisualizationVisible((visible) => !visible)
+                        }
+                      />
                     </div>
                   )}
                 </div>
@@ -518,8 +536,12 @@ function renderThreadPanels(
 
 function VisualizationPane({
   visualization,
+  isVisible,
+  onToggle,
 }: {
   visualization: SelectedVisualization
+  isVisible: boolean
+  onToggle: () => void
 }) {
   const label =
     visualization.source === 'live'
@@ -527,7 +549,11 @@ function VisualizationPane({
       : 'Saved visualization'
 
   return (
-    <section className="flex min-h-[360px] min-w-0 flex-col overflow-hidden rounded-[22px] border border-white/10 bg-white/5 p-3 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
+    <section
+      className={`flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-white/10 bg-white/5 p-3 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] ${
+        isVisible ? 'min-h-[360px]' : 'min-h-[68px]'
+      }`}
+    >
       <div className="mb-2 flex shrink-0 items-center justify-between gap-3 px-1">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-[#FFFCF6]">
@@ -537,16 +563,35 @@ function VisualizationPane({
             {visualization.threadId}
           </p>
         </div>
-        <span className="shrink-0 rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-white/45">
-          iframe
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-white/45">
+            iframe
+          </span>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="size-8 rounded-lg text-white/55 hover:bg-white/10 hover:text-white"
+            onClick={onToggle}
+            aria-label={isVisible ? 'Hide visualization' : 'Show visualization'}
+            title={isVisible ? 'Hide visualization' : 'Show visualization'}
+          >
+            {isVisible ? (
+              <EyeOff className="size-4" />
+            ) : (
+              <Eye className="size-4" />
+            )}
+          </Button>
+        </div>
       </div>
-      <div className="min-h-0 flex-1">
-        <VisualizationIframe
-          html={visualization.html}
-          title={visualization.title ?? label}
-        />
-      </div>
+      {isVisible && (
+        <div className="min-h-0 flex-1">
+          <VisualizationIframe
+            html={visualization.html}
+            title={visualization.title ?? label}
+          />
+        </div>
+      )}
     </section>
   )
 }

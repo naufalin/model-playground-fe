@@ -43,6 +43,20 @@ type ToolRun = {
   outputPreview?: string | null
 }
 
+type ActivityItem =
+  | {
+      type: 'thinking'
+      id: string
+      content: string
+      isLive?: boolean
+    }
+  | {
+      type: 'tools'
+      id: string
+      runs: ToolRun[]
+      isLive?: boolean
+    }
+
 export function ThreadPanel({
   displayName,
   provider,
@@ -437,7 +451,30 @@ function formatNumber(n: number): string {
 function renderHistoricalMessages(messages: Message[], provider: string) {
   const nodes: ReactNode[] = []
   let toolBuffer: Message[] = []
+  let activityBuffer: ActivityItem[] = []
   let hasThinkingSinceLastAssistant = false
+
+  function flushTools() {
+    if (toolBuffer.length === 0) return
+    activityBuffer.push({
+      type: 'tools',
+      id: `tools-${toolBuffer[0].id}`,
+      runs: toolRunsFromMessages(toolBuffer),
+    })
+    toolBuffer = []
+  }
+
+  function flushActivity() {
+    flushTools()
+    if (activityBuffer.length === 0) return
+    nodes.push(
+      <AgentActivity
+        key={`activity-${activityBuffer[0].id}`}
+        items={activityBuffer}
+      />,
+    )
+    activityBuffer = []
+  }
 
   messages.forEach((message) => {
     if (message.role === 'tool') {
@@ -445,19 +482,18 @@ function renderHistoricalMessages(messages: Message[], provider: string) {
       return
     }
 
-    if (toolBuffer.length > 0) {
-      nodes.push(
-        <ToolActivity
-          key={`tools-${toolBuffer[0].id}`}
-          runs={toolRunsFromMessages(toolBuffer)}
-        />,
-      )
-      toolBuffer = []
+    if (message.role === 'thinking') {
+      flushTools()
+      hasThinkingSinceLastAssistant = true
+      activityBuffer.push({
+        type: 'thinking',
+        id: `thinking-${message.id}`,
+        content: formatThinking(provider, message.thinking, message.content),
+      })
+      return
     }
 
-    if (message.role === 'thinking') {
-      hasThinkingSinceLastAssistant = true
-    }
+    flushActivity()
 
     nodes.push(
       <MessageBubble
@@ -473,14 +509,7 @@ function renderHistoricalMessages(messages: Message[], provider: string) {
     }
   })
 
-  if (toolBuffer.length > 0) {
-    nodes.push(
-      <ToolActivity
-        key={`tools-${toolBuffer[0].id}`}
-        runs={toolRunsFromMessages(toolBuffer)}
-      />,
-    )
-  }
+  flushActivity()
 
   return nodes
 }
@@ -490,18 +519,17 @@ function renderLiveTimeline(
   provider: string,
   isStreaming: boolean,
 ) {
-  const nodes: ReactNode[] = []
+  const items: ActivityItem[] = []
   let toolBuffer: ToolEvent[] = []
 
   function flushTools() {
     if (toolBuffer.length === 0) return
-    nodes.push(
-      <ToolActivity
-        key={`live-tools-${nodes.length}`}
-        runs={toolRunsFromEvents(toolBuffer)}
-        isLive={isStreaming}
-      />,
-    )
+    items.push({
+      type: 'tools',
+      id: `live-tools-${items.length}`,
+      runs: toolRunsFromEvents(toolBuffer),
+      isLive: isStreaming && toolBuffer.some((event) => event.type === 'tool_start'),
+    })
     toolBuffer = []
   }
 
@@ -513,18 +541,17 @@ function renderLiveTimeline(
 
     flushTools()
     const isCurrentThinking = isStreaming && index === timeline.length - 1
-    nodes.push(
-      <ThinkingPanel
-        key={event.id}
-        content={formatThinking(provider, { [event.kind]: event.content }, event.content)}
-        isLive={isCurrentThinking}
-        headerSeed={event.id}
-      />,
-    )
+    items.push({
+      type: 'thinking',
+      id: event.id,
+      content: formatThinking(provider, { [event.kind]: event.content }, event.content),
+      isLive: isCurrentThinking,
+    })
   })
 
   flushTools()
-  return nodes
+  if (items.length === 0) return null
+  return <AgentActivity items={items} isLive={isStreaming} />
 }
 
 function MessageBubble({
@@ -547,14 +574,29 @@ function MessageBubble({
   }
 
   if (message.role === 'tool') {
-    return <ToolActivity runs={toolRunsFromMessages([message])} />
+    return (
+      <AgentActivity
+        items={[
+          {
+            type: 'tools',
+            id: `tool-${message.id}`,
+            runs: toolRunsFromMessages([message]),
+          },
+        ]}
+      />
+    )
   }
 
   if (message.role === 'thinking') {
     return (
-      <ThinkingPanel
-        content={formatThinking(provider, message.thinking, message.content)}
-        headerSeed={String(message.id)}
+      <AgentActivity
+        items={[
+          {
+            type: 'thinking',
+            id: `thinking-${message.id}`,
+            content: formatThinking(provider, message.thinking, message.content),
+          },
+        ]}
       />
     )
   }
@@ -637,6 +679,123 @@ function randomThinkingPhrase() {
 
 // -- Thinking ----------------------------------------------------------------
 
+function AgentActivity({
+  items,
+  isLive = false,
+}: {
+  items: ActivityItem[]
+  isLive?: boolean
+}) {
+  const [expanded, setExpanded] = useState(false)
+  if (items.length === 0) return null
+
+  const { title, subtitle, liveKind } = summarizeActivity(items, isLive)
+
+  return (
+    <div className="rounded-xl border border-violet-500/20 bg-violet-500/8 px-3 py-2">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-3 text-left"
+        onClick={() => setExpanded((prev) => !prev)}
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <span
+            className={cn(
+              'grid size-6 shrink-0 place-items-center rounded-lg bg-white/8 ring-1',
+              liveKind === 'tool'
+                ? 'text-amber-400 ring-amber-500/20'
+                : 'text-violet-300 ring-violet-500/20',
+            )}
+          >
+            {liveKind === 'tool' ? (
+              <Wrench className="size-3.5" />
+            ) : isLive ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="size-3.5" />
+            )}
+          </span>
+          <span className="min-w-0">
+            <span
+              className={cn(
+                'block truncate text-xs font-semibold text-violet-200',
+                liveKind === 'tool' && 'text-amber-200',
+                isLive && !expanded && 'text-shimmer',
+              )}
+            >
+              {title}
+            </span>
+            <span className="block truncate text-[11px] text-white/45">
+              {subtitle}
+            </span>
+          </span>
+        </span>
+        {expanded ? (
+          <ChevronUp className="size-3.5 shrink-0 text-white/45" />
+        ) : (
+          <ChevronDown className="size-3.5 shrink-0 text-white/45" />
+        )}
+      </button>
+
+      {expanded && (
+        <div className="mt-2 space-y-2">
+          {items.map((item) =>
+            item.type === 'thinking' ? (
+              <ThinkingDetail key={item.id} item={item} />
+            ) : (
+              <div key={item.id} className="space-y-2">
+                {item.runs.map((run, index) => (
+                  <ToolRunCard key={`${run.id}-${index}`} run={run} />
+                ))}
+              </div>
+            ),
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ThinkingDetail({
+  item,
+}: {
+  item: Extract<ActivityItem, { type: 'thinking' }>
+}) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className="rounded-lg border border-violet-500/15 bg-white/5 px-2.5 py-2">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-2 text-left"
+        onClick={() => setExpanded((prev) => !prev)}
+      >
+        <span className="flex min-w-0 items-center gap-2 text-[11px] font-medium text-violet-200">
+          <Sparkles className="size-3.5 shrink-0" />
+          <span className={cn('truncate', item.isLive && 'text-shimmer')}>
+            Reasoning
+          </span>
+        </span>
+        {expanded ? (
+          <ChevronUp className="size-3.5 shrink-0 text-violet-400" />
+        ) : (
+          <ChevronDown className="size-3.5 shrink-0 text-violet-400" />
+        )}
+      </button>
+      {expanded && (
+        <pre
+          className={cn(
+            'mt-2 max-h-60 overflow-auto whitespace-pre-wrap rounded-lg bg-white/5 px-2.5 py-2 text-xs leading-relaxed text-violet-200',
+            item.isLive && 'text-shimmer',
+          )}
+        >
+          {item.content}
+        </pre>
+      )}
+    </div>
+  )
+}
+
 function ThinkingPanel({
   content,
   isLive = false,
@@ -686,93 +845,46 @@ function ThinkingPanel({
 
 // -- Tools -------------------------------------------------------------------
 
-function ToolActivity({
-  runs,
-  isLive = false,
-}: {
-  runs: ToolRun[]
-  isLive?: boolean
-}) {
+function ToolRunCard({ run }: { run: ToolRun }) {
   const [expanded, setExpanded] = useState(false)
-  if (runs.length === 0) return null
-
-  const activeCount = runs.filter((run) => run.status === 'running').length
-  const completedCount = runs.length - activeCount
-  const hasActive = activeCount > 0
-  const toolSummary = summarizeTools(runs)
-  const statusText = hasActive
-    ? `${activeCount} running${completedCount ? `, ${completedCount} done` : ''}`
-    : `${completedCount} completed`
 
   return (
-    <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 px-3 py-2">
+    <div className="rounded-lg border border-amber-500/15 bg-white/5 px-2.5 py-2">
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-3 text-left"
+        className="flex w-full items-center justify-between gap-2 text-left"
         onClick={() => setExpanded((prev) => !prev)}
       >
-        <span className="flex min-w-0 items-center gap-2">
-          <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-white/8 text-amber-400 ring-1 ring-amber-500/20">
-            {hasActive ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <Wrench className="size-3.5" />
-            )}
+        <div className="flex min-w-0 items-center gap-2">
+          {run.status === 'running' ? (
+            <CircleDashed className="size-3.5 shrink-0 animate-spin text-amber-400" />
+          ) : (
+            <CheckCircle2 className="size-3.5 shrink-0 text-[#047857]" />
+          )}
+          <span className="truncate font-mono text-[11px] text-white/65">
+            {run.tool}
           </span>
-          <span className="min-w-0">
-            <span
-              className={cn(
-                'block text-xs font-semibold text-amber-200',
-                isLive &&
-                  hasActive &&
-                  'text-shimmer [--shimmer-base:#92400e] [--shimmer-highlight:#fef3c7] [--shimmer-mid:#ea580c]',
-              )}
-            >
-              {hasActive ? 'Using tools' : 'Tools'}
-            </span>
-            <span className="block truncate text-[11px] text-amber-300/70">
-              {toolSummary} · {statusText}
-            </span>
+        </div>
+        <span className="flex shrink-0 items-center gap-2">
+          <span className="text-[10px] uppercase tracking-wide text-white/30">
+            {run.status}
           </span>
+          {expanded ? (
+            <ChevronUp className="size-3.5 text-amber-400" />
+          ) : (
+            <ChevronDown className="size-3.5 text-amber-400" />
+          )}
         </span>
-        {expanded ? (
-          <ChevronUp className="size-3.5 shrink-0 text-amber-400" />
-        ) : (
-          <ChevronDown className="size-3.5 shrink-0 text-amber-400" />
-        )}
       </button>
 
       {expanded && (
         <div className="mt-2 space-y-2">
-          {runs.map((run, index) => (
-              <div
-                key={`${run.id}-${index}`}
-                className="rounded-lg border border-amber-500/15 bg-white/5 px-2.5 py-2"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    {run.status === 'running' ? (
-                      <CircleDashed className="size-3.5 shrink-0 animate-spin text-amber-400" />
-                    ) : (
-                      <CheckCircle2 className="size-3.5 shrink-0 text-[#047857]" />
-                    )}
-                    <span className="truncate font-mono text-[11px] text-white/60">
-                      {run.tool}
-                    </span>
-                  </div>
-                  <span className="shrink-0 text-[10px] uppercase tracking-wide text-white/30">
-                    {run.status}
-                  </span>
-                </div>
-
-                {run.args !== undefined && (
-                  <ToolDetail label="input" value={run.args} />
-                )}
-                {run.outputPreview && (
-                  <ToolDetail label="output" value={run.outputPreview} />
-                )}
-              </div>
-          ))}
+          {run.args !== undefined && (
+            <ToolDetail label="input" value={run.args} />
+          )}
+          {run.outputPreview && (
+            <ToolDetail label="output" value={run.outputPreview} />
+          )}
         </div>
       )}
     </div>
@@ -780,14 +892,28 @@ function ToolActivity({
 }
 
 function ToolDetail({ label, value }: { label: string; value: unknown }) {
+  const [expanded, setExpanded] = useState(false)
+  label = label.charAt(0).toUpperCase() + label.slice(1).toLowerCase()
+
   return (
     <div className="mt-2 rounded-lg bg-white/5 px-2 py-1.5">
-      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-white/30">
-        {label}
-      </p>
-      <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-white/50">
-        {formatValue(value)}
-      </pre>
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-2 text-left text-[5px] font-medium text-white/35"
+        onClick={() => setExpanded((prev) => !prev)}
+      >
+        <span className="scale-70">{label}</span>
+        {expanded ? (
+          <ChevronUp className="size-3 text-white/35" />
+        ) : (
+          <ChevronDown className="size-3 text-white/35" />
+        )}
+      </button>
+      {expanded && (
+        <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-relaxed text-white/50">
+          {formatValue(value)}
+        </pre>
+      )}
     </div>
   )
 }
@@ -797,25 +923,32 @@ function toolRunsFromEvents(events: ToolEvent[]): ToolRun[] {
 
   events.forEach((event, index) => {
     const id = event.callId || `${event.tool}-${index}`
-    const existing = runs.get(id) ?? {
+    const existing = runs.get(id)
+    const tool = inferToolName(
+      event.tool,
+      event.args ?? existing?.args,
+      event.outputPreview,
+      event.vizHtml,
+    )
+    const run = existing ?? {
       id,
-      tool: event.tool,
+      tool,
       status: 'running' as const,
     }
 
     if (event.type === 'tool_start') {
       runs.set(id, {
-        ...existing,
-        tool: event.tool,
-        status: existing.status,
+        ...run,
+        tool,
+        status: run.status,
         args: event.args,
       })
       return
     }
 
     runs.set(id, {
-      ...existing,
-      tool: event.tool,
+      ...run,
+      tool: isGenericToolName(tool) ? run.tool : tool,
       status: 'done',
       outputPreview: cleanPreview(event.outputPreview),
     })
@@ -828,7 +961,12 @@ function toolRunsFromMessages(messages: Message[]): ToolRun[] {
   const runs = new Map<string, ToolRun>()
 
   messages.forEach((message) => {
-    const tool = message.tool_name || parseToolName(message.content) || 'tool'
+    const tool = inferToolName(
+      message.tool_name || parseToolName(message.content) || 'tool',
+      message.tool_input,
+      message.output_preview,
+      message.viz_html,
+    )
     const id = message.tool_call_id || `message-${message.id}`
     const existing = runs.get(id) ?? {
       id,
@@ -841,7 +979,7 @@ function toolRunsFromMessages(messages: Message[]): ToolRun[] {
 
     runs.set(id, {
       ...existing,
-      tool,
+      tool: isGenericToolName(tool) ? existing.tool : tool,
       status: isDone ? 'done' : existing.status,
       args: message.tool_input ?? existing.args,
       outputPreview: cleanPreview(message.output_preview) ?? existing.outputPreview,
@@ -851,15 +989,96 @@ function toolRunsFromMessages(messages: Message[]): ToolRun[] {
   return [...runs.values()]
 }
 
-function summarizeTools(runs: ToolRun[]) {
-  const counts = runs.reduce<Record<string, number>>((acc, run) => {
-    acc[run.tool] = (acc[run.tool] ?? 0) + 1
-    return acc
-  }, {})
+function inferToolName(
+  rawTool: string | null | undefined,
+  args?: unknown,
+  outputPreview?: string | null,
+  vizHtml?: string | null,
+) {
+  const tool = rawTool?.trim() || 'tool'
+  if (!isGenericToolName(tool)) return tool
+  if (typeof vizHtml === 'string' && vizHtml.trim()) return 'generate_visualization'
 
-  return Object.entries(counts)
-    .map(([tool, count]) => (count > 1 ? `${tool} x${count}` : tool))
-    .join(', ')
+  if (isRecord(args)) {
+    if (
+      typeof args.chart_type === 'string' &&
+      typeof args.data === 'string' &&
+      typeof args.title === 'string'
+    ) {
+      return 'generate_visualization'
+    }
+    if (typeof args.query === 'string') return 'web_search'
+    if (Array.isArray(args.urls)) return 'web_fetch'
+    if (typeof args.city === 'string') return 'get_weather'
+    if (
+      typeof args.amount === 'number' &&
+      typeof args.from_currency === 'string' &&
+      typeof args.to_currency === 'string'
+    ) {
+      return 'convert_currency'
+    }
+    if (typeof args.country_name === 'string') return 'get_country_info'
+  }
+
+  const preview = outputPreview ?? ''
+  if (preview.includes('"html"') || preview.startsWith('<!DOCTYPE html>')) {
+    return 'generate_visualization'
+  }
+  if (/^\[[^\]]+]\(https?:\/\//m.test(preview)) return 'web_search'
+  if (preview.startsWith('## ') || preview.includes('## Failed URLs')) return 'web_fetch'
+  if (preview.startsWith('Weather in ')) return 'get_weather'
+  if (preview.includes('\nRate: 1 ')) return 'convert_currency'
+  if (preview.includes('\n  Capital: ') && preview.includes('\n  Population: ')) {
+    return 'get_country_info'
+  }
+
+  return tool
+}
+
+function isGenericToolName(tool: string) {
+  return tool === 'tool' || tool === 'unknown'
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function summarizeActivity(items: ActivityItem[], isLive: boolean) {
+  const thinkingCount = items.filter((item) => item.type === 'thinking').length
+  const toolRuns = items.flatMap((item) =>
+    item.type === 'tools' ? item.runs : [],
+  )
+  const activeTool = [...toolRuns].reverse().find((run) => run.status === 'running')
+  const latestItem = [...items].reverse()[0]
+  const latestTool = [...toolRuns].reverse()[0]
+
+  const title = activeTool
+    ? `Using ${activeTool.tool}`
+    : isLive && latestItem?.type === 'thinking'
+      ? 'Reasoning'
+      : isLive && latestTool
+        ? `Used ${latestTool.tool}`
+        : 'Agent activity'
+
+  const parts = []
+  if (thinkingCount > 0) {
+    parts.push(`${thinkingCount} reasoning ${thinkingCount === 1 ? 'step' : 'steps'}`)
+  }
+  if (toolRuns.length > 0) {
+    const activeCount = toolRuns.filter((run) => run.status === 'running').length
+    const completedCount = toolRuns.length - activeCount
+    parts.push(
+      activeCount > 0
+        ? `${activeCount} running, ${completedCount} done`
+        : `${completedCount} tool ${completedCount === 1 ? 'call' : 'calls'}`,
+    )
+  }
+
+  return {
+    title,
+    subtitle: parts.join(' · ') || 'Working',
+    liveKind: activeTool || latestItem?.type === 'tools' ? 'tool' : 'thinking',
+  }
 }
 
 function cleanPreview(value?: string | null) {
