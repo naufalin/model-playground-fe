@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input'
 import { ChatInput } from '@/components/ChatInput'
 import { ModelSelector } from '@/components/ModelSelector'
 import { ThreadPanel } from '@/components/ThreadPanel'
+import { ToolSelector } from '@/components/ToolSelector'
 import { VisualizationIframe } from '@/components/VisualizationIframe'
 import { useAuth } from '@/lib/use-auth'
 import { useChatStream } from '@/lib/use-chat-stream'
@@ -27,9 +28,10 @@ import {
   deletePlayground,
   getModels,
   getPlaygroundDetail,
+  getTools,
   updatePlayground,
 } from '@/lib/api'
-import type { Message, Model, ModelSelect, PlaygroundDetail } from '@/lib/api'
+import type { Message, Model, ModelSelect, PlaygroundDetail, Tool } from '@/lib/api'
 import type { ToolEvent } from '@/lib/use-chat-stream'
 
 type SelectedVisualization = {
@@ -48,11 +50,14 @@ export function PlaygroundPage() {
   // Data
   const [detail, setDetail] = useState<PlaygroundDetail | null>(null)
   const [models, setModels] = useState<Model[]>([])
+  const [tools, setTools] = useState<Tool[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   // Chat — welcome state uses multi-chat, per-thread uses continue
   const [selectedModels, setSelectedModels] = useState<ModelSelect[]>([])
+  const [selectedTools, setSelectedTools] = useState<string[]>([])
+  const [isSavingTools, setIsSavingTools] = useState(false)
   const [message, setMessage] = useState('')
   const [sentPrompt, setSentPrompt] = useState<string | null>(null)
   const [isVisualizationVisible, setIsVisualizationVisible] = useState(true)
@@ -85,11 +90,13 @@ export function PlaygroundPage() {
 
     let cancelled = false
 
-    Promise.all([getPlaygroundDetail(token, id), getModels(token)])
-      .then(([d, m]) => {
+    Promise.all([getPlaygroundDetail(token, id), getModels(token), getTools(token)])
+      .then(([d, m, t]) => {
         if (!cancelled) {
           setDetail(d)
           setModels(m.models)
+          setTools(t.tools)
+          setSelectedTools(d.tools ?? t.tools.map((tool) => tool.name))
           setError(null)
         }
       })
@@ -148,13 +155,13 @@ export function PlaygroundPage() {
 
     setSentPrompt(message.trim())
     reset()
-    await sendMultiChat(message.trim(), selectedModels)
+    await sendMultiChat(message.trim(), selectedModels, selectedTools)
     setMessage('')
   }
 
   /** Continue a single thread independently. */
   function handleContinue(threadId: string, msg: string) {
-    sendContinueChat(threadId, msg)
+    sendContinueChat(threadId, msg, selectedTools)
   }
 
   function handleStop() {
@@ -179,7 +186,7 @@ export function PlaygroundPage() {
 
     setIsSaving(true)
     try {
-      const updated = await updatePlayground(token, id, newTitle)
+      const updated = await updatePlayground(token, id, { title: newTitle })
       setDetail((prev) => (prev ? { ...prev, title: updated.title } : prev))
       setIsEditing(false)
     } catch (err: unknown) {
@@ -207,12 +214,27 @@ export function PlaygroundPage() {
     try {
       const now = new Date()
       const title = `Playground ${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-      const result = await createPlayground(token, title)
+      const result = await createPlayground(token, title, selectedTools)
       navigate(`/playground/${result.id}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Could not create playground.')
     } finally {
       setIsCreating(false)
+    }
+  }
+
+  async function handleToolsChange(nextTools: string[]) {
+    setSelectedTools(nextTools)
+    if (!id || !detail) return
+
+    setIsSavingTools(true)
+    try {
+      const updated = await updatePlayground(token, id, { tools: nextTools })
+      setDetail((prev) => (prev ? { ...prev, tools: updated.tools } : prev))
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Could not update tools.')
+    } finally {
+      setIsSavingTools(false)
     }
   }
 
@@ -404,6 +426,14 @@ export function PlaygroundPage() {
                   onChange={setSelectedModels}
                   disabled={isStreaming}
                 />
+                <div className="mt-5 border-t border-white/10 pt-5">
+                  <ToolSelector
+                    tools={tools}
+                    selected={selectedTools}
+                    onChange={handleToolsChange}
+                    disabled={isStreaming || isSavingTools}
+                  />
+                </div>
               </div>
               <div className="flex items-end gap-2">
                 <div className="flex-1">
@@ -436,19 +466,38 @@ export function PlaygroundPage() {
         ) : (
           /* ── Chat view: context bar + panels + global composer ── */
           <div className="flex min-h-0 flex-1 flex-col">
-            {/* Prompt context bar */}
-            {contextPrompt && (
-              <div className="shrink-0 border-b border-white/8 bg-white/3 px-5 py-2.5">
-                <div className="mx-auto max-w-[1600px]">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
-                    Comparing
-                  </p>
-                  <p className="mt-0.5 truncate text-sm text-white/80">
-                    {contextPrompt}
-                  </p>
+            {/* Context and tool bar */}
+            <div className="shrink-0 border-b border-white/8 bg-white/3 px-5 py-2.5">
+              <div className="mx-auto grid max-w-[1600px] gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.65fr)]">
+                <div className="min-w-0">
+                  {contextPrompt ? (
+                    <>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
+                        Comparing
+                      </p>
+                      <p className="mt-0.5 truncate text-sm text-white/80">
+                        {contextPrompt}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">
+                        Session tools
+                      </p>
+                      <p className="mt-0.5 truncate text-sm text-white/55">
+                        {selectedTools.length} selected
+                      </p>
+                    </>
+                  )}
                 </div>
+                <ToolSelector
+                  tools={tools}
+                  selected={selectedTools}
+                  onChange={handleToolsChange}
+                  disabled={isStreaming || isSavingTools}
+                />
               </div>
-            )}
+            </div>
 
             {/* Thread panels */}
 

@@ -25,6 +25,7 @@ import {
   formatDate,
   getModels,
   getPlaygroundSessions,
+  getTools,
 } from '@/lib/api'
 import type { DashboardData, Model } from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -92,7 +93,12 @@ export function DashboardPage() {
   async function handleNewPlayground(initialPrompt?: string) {
     setIsCreating(true)
     try {
-      const created = await createPlayground(token)
+      const toolsResponse = await getTools(token)
+      const created = await createPlayground(
+        token,
+        'New Playground',
+        toolsResponse.tools.map((tool) => tool.name),
+      )
       navigate(`/playground/${created.id}`, {
         state: initialPrompt ? { initialPrompt } : undefined,
       })

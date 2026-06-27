@@ -294,14 +294,14 @@ export function useChatStream(token: string, playgroundId: string) {
 
   /** Send a message to multiple models (fanout). */
   const sendMultiChat = useCallback(
-    async (message: string, models: ModelSelect[]) => {
+    async (message: string, models: ModelSelect[], tools: string[]) => {
       startedThreadIds.current = []
       dispatch({ type: 'START_STREAM' })
 
       const controller = new AbortController()
       abortRef.current = controller
 
-      const payload = multiChatPayload(playgroundId, message, models)
+      const payload = multiChatPayload(playgroundId, message, models, tools)
 
       try {
         for await (const event of streamSSE({
@@ -332,13 +332,13 @@ export function useChatStream(token: string, playgroundId: string) {
 
   /** Continue a single thread with a follow-up message. */
   const sendContinueChat = useCallback(
-    async (threadId: string, message: string) => {
+    async (threadId: string, message: string, tools: string[]) => {
       dispatch({ type: 'START_STREAM' })
 
       const controller = new AbortController()
       abortRef.current = controller
 
-      const payload = continueChatPayload(playgroundId, threadId, message)
+      const payload = continueChatPayload(playgroundId, threadId, message, tools)
 
       try {
         for await (const event of streamSSE({

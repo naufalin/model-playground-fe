@@ -31,6 +31,7 @@ export type Model = {
 export type PlaygroundSession = {
   id: string
   title: string
+  tools: string[] | null
   created_at: string | null
 }
 
@@ -64,12 +65,23 @@ export type Thread = {
 export type PlaygroundDetail = {
   id: string
   title: string
+  tools: string[] | null
   created_at: string | null
   threads: Thread[]
 }
 
 export type ModelsResponse = {
   models: Model[]
+}
+
+export type Tool = {
+  name: string
+  description: string
+}
+
+export type ToolsResponse = {
+  tools: Tool[]
+  total: number
 }
 
 export type PlaygroundListResponse = {
@@ -177,6 +189,10 @@ export function getModels(token: string) {
   return apiRequest<ModelsResponse>('/models', {}, token)
 }
 
+export function getTools(token: string) {
+  return apiRequest<ToolsResponse>('/tools', {}, token)
+}
+
 // ── Playground CRUD ──────────────────────────────────────────────────────────
 
 export function getPlaygroundSessions(token: string, limit = 20, offset = 0) {
@@ -191,18 +207,26 @@ export function getPlaygroundDetail(token: string, id: string) {
   return apiRequest<PlaygroundDetail>(`/playground/${id}`, {}, token)
 }
 
-export function createPlayground(token: string, title = 'New Playground') {
+export function createPlayground(
+  token: string,
+  title = 'New Playground',
+  tools: string[] | null = null,
+) {
   return apiRequest<PlaygroundSession>(
     '/playground',
-    { method: 'POST', body: JSON.stringify({ title }) },
+    { method: 'POST', body: JSON.stringify({ title, tools }) },
     token,
   )
 }
 
-export function updatePlayground(token: string, id: string, title: string) {
+export function updatePlayground(
+  token: string,
+  id: string,
+  patch: { title?: string; tools?: string[] | null },
+) {
   return apiRequest<PlaygroundSession>(
     `/playground/${id}`,
-    { method: 'PATCH', body: JSON.stringify({ title }) },
+    { method: 'PATCH', body: JSON.stringify(patch) },
     token,
   )
 }
@@ -241,10 +265,11 @@ export function multiChatPayload(
   playgroundId: string,
   message: string,
   models: ModelSelect[],
+  tools: string[],
 ) {
   return {
     path: `/playground/${playgroundId}/chat`,
-    body: { message, models },
+    body: { message, models, tools },
   }
 }
 
@@ -253,10 +278,11 @@ export function continueChatPayload(
   playgroundId: string,
   threadId: string,
   message: string,
+  tools: string[],
 ) {
   return {
     path: `/playground/${playgroundId}/chat/${threadId}`,
-    body: { message },
+    body: { message, tools },
   }
 }
 
